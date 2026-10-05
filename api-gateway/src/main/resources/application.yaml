@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: api-gateway
+
+server:
+  port: ${PORT:9000}
+
+
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+
+
+# discovery client configuration
+eureka:
+  instance:
+    hostname: localhost
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    com.payflow.apigateway: DEBUG

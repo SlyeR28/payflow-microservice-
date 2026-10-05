@@ -1,0 +1,386 @@
+{
+  "info": {
+    "name": "PayFlow - Auth & Identity Service",
+    "description": "Comprehensive Postman collection for testing all Happy Paths & Edge Cases of PayFlow Auth Service.\nIncludes auto-extraction scripts for Access & Refresh tokens.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:9000", "type": "string" },
+    { "key": "accessToken", "value": "", "type": "string" },
+    { "key": "refreshToken", "value": "", "type": "string" },
+    { "key": "userEmail", "value": "alex.test@example.com", "type": "string" },
+    { "key": "assignedUsername", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "1. Registration",
+      "item": [
+        {
+          "name": "1.1 Register - Success (Auto-generated Username)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"SecurePass@123\",\n  \"confirmPassword\": \"SecurePass@123\",\n  \"firstName\": \"Alex\",\n  \"lastName\": \"Vance\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "register"] },
+            "description": "Registers a new user without providing a username. System auto-generates a unique username and sends an OTP (check terminal logs)."
+          }
+        },
+        {
+          "name": "1.2 Register - Edge Case: Password Mismatch",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"mismatch@example.com\",\n  \"password\": \"SecurePass@123\",\n  \"confirmPassword\": \"DifferentPass@456\",\n  \"firstName\": \"Alex\",\n  \"lastName\": \"Vance\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "register"] },
+            "description": "Expect 400 Bad Request (PasswordMismatchException)."
+          }
+        },
+        {
+          "name": "1.3 Register - Edge Case: Duplicate Email",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"SecurePass@123\",\n  \"confirmPassword\": \"SecurePass@123\",\n  \"firstName\": \"Alex\",\n  \"lastName\": \"Vance\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "register"] },
+            "description": "Expect 409 Conflict (EmailAlreadyRegisteredException)."
+          }
+        },
+        {
+          "name": "1.4 Register - Edge Case: Validation Failure (Short Password)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"invalid-email\",\n  \"password\": \"123\",\n  \"confirmPassword\": \"123\",\n  \"firstName\": \"\",\n  \"lastName\": \"\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "register"] },
+            "description": "Expect 400 Bad Request with field validation errors (email format, password min length 8, first/last name required)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Email Verification & OTP",
+      "item": [
+        {
+          "name": "2.1 Verify Email - Success",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/verify-email", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "verify-email"] },
+            "description": "Replace '123456' with the 6-digit OTP printed in your auth-service terminal logs.\nOn success, user status changes to ACTIVE and emailVerified = true."
+          }
+        },
+        {
+          "name": "2.2 Verify Email - Edge Case: Wrong OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"otp\": \"999999\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/verify-email", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "verify-email"] },
+            "description": "Expect 400 Bad Request (InvalidOtpException). Increments attempts count in DB."
+          }
+        },
+        {
+          "name": "2.3 Resend OTP - Success",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/resend-otp", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "resend-otp"] },
+            "description": "Invalidates previously issued OTPs and sends a fresh 6-digit OTP."
+          }
+        },
+        {
+          "name": "2.4 Resend OTP - Edge Case: Already Verified",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/resend-otp", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "resend-otp"] },
+            "description": "If user is already verified, expect 400 Bad Request (EMAIL_ALREADY_VERIFIED)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Authentication (Login & Refresh)",
+      "item": [
+        {
+          "name": "3.1 Login - Success (Using Email)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.accessToken) {",
+                  "    pm.collectionVariables.set('accessToken', jsonData.accessToken);",
+                  "}",
+                  "if (jsonData.refreshToken) {",
+                  "    pm.collectionVariables.set('refreshToken', jsonData.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{userEmail}}\",\n  \"password\": \"SecurePass@123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "login"] },
+            "description": "Logs in via email. Auto-saves accessToken and refreshToken into collection variables."
+          }
+        },
+        {
+          "name": "3.2 Login - Edge Case: Wrong Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{userEmail}}\",\n  \"password\": \"WrongPassword@999\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "login"] },
+            "description": "Expect 401 Unauthorized (InvalidCredentialsException). Increments user failedAttempts."
+          }
+        },
+        {
+          "name": "3.3 Login - Edge Case: Account Lockout (5 failed attempts)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"{{userEmail}}\",\n  \"password\": \"WrongPassword@999\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "login"] },
+            "description": "After 5 consecutive failed logins, expect 403 / BusinessException ('Account is locked until ...', 'ACCOUNT_LOCKED')."
+          }
+        },
+        {
+          "name": "3.4 Refresh Token - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.accessToken) {",
+                  "    pm.collectionVariables.set('accessToken', jsonData.accessToken);",
+                  "}",
+                  "if (jsonData.refreshToken) {",
+                  "    pm.collectionVariables.set('refreshToken', jsonData.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/refresh", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "refresh"] },
+            "description": "Uses rotated single-use refresh token. Returns a new access token and new rotated refresh token."
+          }
+        },
+        {
+          "name": "3.5 Refresh Token - Edge Case: Token Reuse / Theft Detection",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/refresh", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "refresh"] },
+            "description": "Execute request 3.4 twice with the SAME token! The second call detects reuse, immediately revokes the entire token family (THEFT_DETECTED), and prevents further refreshing."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Password Management",
+      "item": [
+        {
+          "name": "4.1 Forgot Password - Request OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/forgot-password", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "forgot-password"] },
+            "description": "Sends a PASSWORD_RESET OTP to email (printed in console)."
+          }
+        },
+        {
+          "name": "4.2 Reset Password - Success",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"otp\": \"123456\",\n  \"newPassword\": \"BrandNewPass@789\",\n  \"confirmNewPassword\": \"BrandNewPass@789\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/reset-password", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "reset-password"] },
+            "description": "Verifies OTP and resets password. Also unlocks any locked account and resets failedAttempts to 0."
+          }
+        },
+        {
+          "name": "4.3 Change Password - Success (Authenticated)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"BrandNewPass@789\",\n  \"newPassword\": \"UpdatedPass@456\",\n  \"confirmNewPassword\": \"UpdatedPass@456\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/change-password", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "change-password"] },
+            "description": "Changes password while logged in. Requires valid Bearer accessToken."
+          }
+        },
+        {
+          "name": "4.4 Change Password - Edge Case: Wrong Current Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"IncorrectCurrent@000\",\n  \"newPassword\": \"UpdatedPass@456\",\n  \"confirmNewPassword\": \"UpdatedPass@456\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/change-password", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "change-password"] },
+            "description": "Expect 400 Bad Request (INVALID_CURRENT_PASSWORD)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. User Profile & Username Lifecycle",
+      "item": [
+        {
+          "name": "5.1 Get Profile - Success",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/user-profile", "host": ["{{baseUrl}}"], "path": ["api", "v1", "user-profile"] },
+            "description": "Fetches authenticated user's profile details. Note isUsernameTemporary flag."
+          }
+        },
+        {
+          "name": "5.2 Update Profile - Success (No image or URL image)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Alexander\",\n  \"lastName\": \"Vance\",\n  \"phoneNumber\": \"+919876543210\",\n  \"avatarUrl\": \"https://images.unsplash.com/photo-1535713875002-d1d0cf377fde\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/user-profile", "host": ["{{baseUrl}}"], "path": ["api", "v1", "user-profile"] },
+            "description": "Updates profile. Notice avatarUrl is just a String URL or null (no binary image upload required for now)."
+          }
+        },
+        {
+          "name": "5.3 Update Username - Success (First Change)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"alex_vance_custom\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/update-user", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "update-user"] },
+            "description": "First username change from auto-generated username is allowed immediately. Sets userNameChangedAt = now()."
+          }
+        },
+        {
+          "name": "5.4 Update Username - Edge Case: 45-Day Cooldown",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"alex_vance_second_try\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/update-user", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "update-user"] },
+            "description": "Executing another username change immediately after 5.3 will fail with 400 Bad Request (UserNameCoolDownException: Next change allowed at +45 days)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Session Logout",
+      "item": [
+        {
+          "name": "6.1 Logout - Success",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/logout", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "logout"] },
+            "description": "Revokes all refresh tokens for the user in the database."
+          }
+        },
+        {
+          "name": "6.2 Post-Logout - Edge Case: Use Revoked Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/refresh", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "refresh"] },
+            "description": "Expect failure since refresh tokens were revoked upon logout."
+          }
+        }
+      ]
+    }
+  ]
+}
