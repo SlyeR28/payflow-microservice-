@@ -1,0 +1,59 @@
+spring:
+  application:
+    name: merchant-service
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/merchant
+     ?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:Rishabh@28}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+
+    jpa:
+      hibernate:
+        ddl-auto: update
+      show-sql: true
+      properties:
+        hibernate:
+          format_sql: true
+          dialect: org.hibernate.dialect.MySQLDialect
+      open-in-view: false
+
+
+server:
+  port: ${PORT:8083}
+
+eureka:
+  instance:
+    hostname: localhost
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:dev-only-secret-change-me-this-must-be-at-least-64-characters-for-hs256-signing}
+    expiration-millis: 900000
+  refresh-token:
+    expiration-millis: 604800000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.payflow.merchant: DEBUG
+    org.springframework.security: INFO
+    org.hibernate.SQL: DEBUG
+
