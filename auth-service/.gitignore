@@ -28,6 +28,7 @@ target/
 build/
 !**/src/main/**/build/
 !**/src/test/**/build/
+!**/src/main/java/com/payflow/auth-service/extra/
 
 ### VS Code ###
 .vscode/
