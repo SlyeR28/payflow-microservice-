@@ -9,7 +9,10 @@ import java.time.Instant;
 @Entity
 @Table(name = "merchant_addresses", indexes = {
         @Index(name = "idx_addresses_merchant_id", columnList = "merchant_id"),
-        @Index(name = "idx_addresses_type", columnList = "merchant_id,address_type")
+        @Index(name = "idx_addresses_type", columnList = "merchant_id,address_type"),
+        @Index(name = "idx_addresses_merchant_hash", columnList = "merchant_id,address_hash"),
+        @Index(name = "idx_addresses_global_hash", columnList = "address_hash")
+
 })
 @Getter
 @Setter
@@ -53,6 +56,9 @@ public class MerchantAddress {
 
     @Column(name = "is_primary", nullable = false)
     private Boolean isPrimary;
+
+    @Column(name = "address_hash", nullable = false, length = 64)
+    private String addressHash;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

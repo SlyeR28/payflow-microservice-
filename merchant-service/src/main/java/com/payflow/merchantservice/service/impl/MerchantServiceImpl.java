@@ -21,6 +21,7 @@ import com.payflow.merchantservice.repository.MerchantKycRepository;
 import com.payflow.merchantservice.repository.MerchantRepository;
 import com.payflow.merchantservice.security.service.SecurityUtil;
 import com.payflow.merchantservice.service.MerchantService;
+import com.payflow.merchantservice.utils.AddressHashUtility;
 import com.payflow.merchantservice.utils.EncryptionUtil;
 import com.payflow.merchantservice.utils.MaskingUtil;
 import lombok.RequiredArgsConstructor;
@@ -95,6 +96,7 @@ public class MerchantServiceImpl implements MerchantService {
                 .country(request.getAddressRequest().getCountry())
                 .isPrimary(request.getAddressRequest().getIsPrimary() == null
                         || request.getAddressRequest().getIsPrimary())
+                .addressHash(AddressHashUtility.computeHash(request.getAddressRequest()))
                 .build();
 
         merchantAddressRepository.save(merchantAddress);

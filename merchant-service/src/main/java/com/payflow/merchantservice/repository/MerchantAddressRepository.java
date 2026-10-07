@@ -16,4 +16,11 @@ public interface MerchantAddressRepository extends JpaRepository<MerchantAddress
     Optional<MerchantAddress> findByMerchantIdAndAddressType(Long merchantId, AddressType addressType);
 
     Optional<MerchantAddress> findByMerchantIdAndIsPrimaryTrue(Long merchantId);
+
+    Optional<MerchantAddress>  findByMerchantIdAndAddressHash(Long merchantId, String addressHash);
+
+
+    long countByAddressHash(String addressHash);
+
+
 }
