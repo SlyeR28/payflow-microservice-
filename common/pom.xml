@@ -29,6 +29,12 @@
             <artifactId>spring-webmvc</artifactId>
         </dependency>
 
+        <!-- Spring Data Commons: Page, Pageable, Sort for pagination across services -->
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-commons</artifactId>
+        </dependency>
+
         <!-- Bean Validation: @NotNull, @NotBlank, @Email, @Size -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

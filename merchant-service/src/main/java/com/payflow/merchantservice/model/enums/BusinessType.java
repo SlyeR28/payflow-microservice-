@@ -3,6 +3,9 @@ package com.payflow.merchantservice.model.enums;
 public enum BusinessType {
     INDIVIDUAL,
     PROPRIETORSHIP,
+    PARTNERSHIP,
     PRIVATE_LIMITED,
-    etc
+    PUBLIC_LIMITED,
+    LLP,
+    TRUST_NGO
 }

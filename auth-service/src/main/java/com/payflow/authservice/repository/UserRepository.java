@@ -33,14 +33,17 @@ public interface UserRepository extends JpaRepository<User, Long> {
      */
 
     @Query("""
-              SELECT u FROM User u
-                                        WHERE u.usernameChangedAt IS NULL
-                                         AND u.userStatus = 'ACTIVE'
-                                         AND u.createdAt < :createdBefore
-                                         AND (u.lastUsernameReminderAt IS NULL OR u.lastUsernameReminderAt < :reminderCutoff)
-                                         AND u.usernameReminderCount < :maxReminders
-            
-            """)
+    SELECT u
+    FROM User u
+    WHERE u.userNameChangedAt IS NULL
+      AND u.userStatus = 'ACTIVE'
+      AND u.createdAt < :createdBefore
+      AND (
+          u.lastUserNameReminderAt IS NULL
+          OR u.lastUserNameReminderAt < :reminderCutoff
+      )
+      AND u.userNameReminderCount < :maxReminders
+    """)
     List<User> findUsersNeedingUsernameReminder(
             @Param("createdBefore") Instant createdBefore,
             @Param("reminderCutoff") Instant reminderCutoff,

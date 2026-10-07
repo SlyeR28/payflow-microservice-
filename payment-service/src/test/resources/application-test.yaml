@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: payment-service-test
+
+  datasource:
+    url: jdbc:h2:mem:payment_test_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+
+payment:
+  stripe:
+    base-url: https://api.stripe.com
+  razorpay:
+    base-url: https://api.razorpay.com
+  http:
+    connect-timeout-ms: 3000
+    read-timeout-ms: 3000

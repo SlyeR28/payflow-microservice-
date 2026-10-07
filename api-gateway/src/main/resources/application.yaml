@@ -1,6 +1,9 @@
 spring:
   application:
     name: api-gateway
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
 
 server:
   port: ${PORT:9000}

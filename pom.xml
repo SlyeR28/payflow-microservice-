@@ -37,6 +37,7 @@
         <module>api-gateway</module>
         <module>auth-service</module>
         <module>merchant-service</module>
+        <module>payment-service</module>
     </modules>
 
 
