@@ -2,6 +2,7 @@ package com.payflow.merchantservice.model.entity;
 
 import com.payflow.merchantservice.model.enums.BusinessType;
 import com.payflow.merchantservice.model.enums.MerchantStatus;
+import com.payflow.merchantservice.model.enums.MerchantTier;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,6 +14,7 @@ import java.util.List;
 @Table(name = "merchants", indexes = {
         @Index(name = "idx_merchants_user_id", columnList = "user_id", unique = true),
         @Index(name = "idx_merchants_business_email", columnList = "business_email"),
+        @Index(name = "idx_merchants_pan_hash", columnList = "pan_number_hash"),
         @Index(name = "idx_merchants_status", columnList = "status")
 })
 @Getter
@@ -52,6 +54,27 @@ public class Merchant {
 
     @Column(name = "pan_number_encrypted", columnDefinition = "TEXT")
     private String panNumberEncrypted;
+
+    @Column(name = "pan_number_hash", length = 64)
+    private String panNumberHash;
+
+    @Column(name = "is_pan_verified", nullable = false)
+    @Builder.Default
+    private Boolean isPanVerified = false;
+
+    @Column(name = "pan_verified_at")
+    private Instant panVerifiedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tier", nullable = false, length = 30)
+    @Builder.Default
+    private MerchantTier tier = MerchantTier.MICRO;
+
+    @Column(name = "monthly_volume_limit")
+    private Long monthlyVolumeLimit;
+
+    @Column(name = "max_transaction_limit")
+    private Long maxTransactionLimit;
 
     @Column(name = "gstin", length = 30)
     private String gstin;
@@ -101,6 +124,12 @@ public class Merchant {
         updatedAt = createdAt;
         if (status == null) {
             status = MerchantStatus.PENDING;
+        }
+        if (tier == null) {
+            tier = MerchantTier.MICRO;
+        }
+        if (isPanVerified == null) {
+            isPanVerified = false;
         }
     }
 

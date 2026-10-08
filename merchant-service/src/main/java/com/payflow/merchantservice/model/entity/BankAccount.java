@@ -40,7 +40,7 @@ public class BankAccount {
     @Column(name = "account_number_last4", nullable = false, length = 4)
     private String accountNumberLast4;
 
-    @Column(name = "account_number_key_version" , nullable = false)
+    @Column(name = "account_number_key_version")
     private Integer accountNumberKeyVersion;
 
     // -------------------bank details-------------------
@@ -51,9 +51,8 @@ public class BankAccount {
     @Column(name = "bank_name", nullable = false, length = 100)
     private String bankName;
 
-   //----- beneficiary name that most be response from bank side when peny drop
-
-    @Column(name = "beneficiary_name", nullable = false, length = 150)
+   //----- beneficiary name returned from bank penny drop (nullable until verified)
+    @Column(name = "beneficiary_name", length = 150)
     private String beneficiaryName;
 
     //----- name match score that most be response from bank side when peny drop
@@ -65,6 +64,12 @@ public class BankAccount {
 
     @Column(name = "is_verified", nullable = false)
     private Boolean isVerified;
+
+    @Column(name = "verification_reference_id", length = 100)
+    private String verificationReferenceId;
+
+    @Column(name = "verified_at")
+    private Instant verifiedAt;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

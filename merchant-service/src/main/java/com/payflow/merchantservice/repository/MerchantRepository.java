@@ -24,5 +24,9 @@ public interface MerchantRepository extends JpaRepository<Merchant, Long> {
     List<Merchant> findByStatus(MerchantStatus status);
 
     Page<Merchant> findByStatus(MerchantStatus status, Pageable pageable);
+
+    Optional<Merchant> findByPanNumberHash(String panNumberHash);
+
+    boolean existsByPanNumberHash(String panNumberHash);
 }
 

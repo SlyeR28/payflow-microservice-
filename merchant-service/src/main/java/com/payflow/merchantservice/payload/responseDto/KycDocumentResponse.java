@@ -17,6 +17,8 @@ public class KycDocumentResponse {
     private DocumentType documentType;
     private String documentNumberMasked;
     private String s3ObjectKey;
+    private String contentType;
+    private Long fileSize;
     private KycStatus status;
     private String rejectionReason;
     private Instant verifiedAt;

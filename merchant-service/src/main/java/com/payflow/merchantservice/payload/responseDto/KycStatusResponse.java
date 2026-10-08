@@ -14,6 +14,7 @@ public class KycStatusResponse {
 
     private Long merchantId;
     private MerchantStatus merchantStatus;
+    private Boolean isPanVerified;
     private long totalDocuments;
     private long verifiedDocuments;
     private long pendingDocuments;

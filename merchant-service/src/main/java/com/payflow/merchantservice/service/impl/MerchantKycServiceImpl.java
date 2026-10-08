@@ -9,7 +9,6 @@ import com.payflow.merchantservice.mapper.MerchantKycMapper;
 import com.payflow.merchantservice.mapper.MerchantMapper;
 import com.payflow.merchantservice.model.entity.Merchant;
 import com.payflow.merchantservice.model.entity.MerchantAddress;
-import com.payflow.merchantservice.model.entity.MerchantDocument;
 import com.payflow.merchantservice.model.entity.MerchantKyc;
 import com.payflow.merchantservice.model.enums.DocumentType;
 import com.payflow.merchantservice.model.enums.KycStatus;
@@ -23,7 +22,6 @@ import com.payflow.merchantservice.payload.responseDto.KycStatusResponse;
 import com.payflow.merchantservice.payload.responseDto.MerchantResponse;
 import com.payflow.merchantservice.payload.responseDto.UploadUrlResponse;
 import com.payflow.merchantservice.repository.MerchantAddressRepository;
-import com.payflow.merchantservice.repository.MerchantDocumentRepository;
 import com.payflow.merchantservice.repository.MerchantKycRepository;
 import com.payflow.merchantservice.repository.MerchantRepository;
 import com.payflow.merchantservice.service.MerchantKycService;
@@ -46,7 +44,6 @@ public class MerchantKycServiceImpl implements MerchantKycService {
 
     private final MerchantRepository merchantRepository;
     private final MerchantKycRepository merchantKycRepository;
-    private final MerchantDocumentRepository merchantDocumentRepository;
     private final MerchantAddressRepository merchantAddressRepository;
     private final MerchantKycMapper merchantKycMapper;
     private final MerchantMapper merchantMapper;
@@ -108,12 +105,6 @@ public class MerchantKycServiceImpl implements MerchantKycService {
         }
         MerchantKyc savedKyc = merchantKycRepository.save(kyc);
 
-        merchantDocumentRepository.save(MerchantDocument.builder()
-                .merchant(merchant)
-                .documentName(request.getDocumentType().name())
-                .s3ObjectKey(request.getS3ObjectKey())
-                .build());
-
         log.info("Confirmed document upload for merchantId={}, docType={}, kycId={}",
                 merchantId, request.getDocumentType(), savedKyc.getId());
 
@@ -165,6 +156,7 @@ public class MerchantKycServiceImpl implements MerchantKycService {
         return KycStatusResponse.builder()
                 .merchantId(merchantId)
                 .merchantStatus(merchant.getStatus())
+                .isPanVerified(merchant.getIsPanVerified())
                 .totalDocuments(docs.size())
                 .verifiedDocuments(verified)
                 .pendingDocuments(pending)

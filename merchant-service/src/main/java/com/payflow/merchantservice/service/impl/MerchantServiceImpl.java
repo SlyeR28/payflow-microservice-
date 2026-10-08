@@ -1,6 +1,7 @@
 package com.payflow.merchantservice.service.impl;
 
 import com.payflow.common.dto.PagedResponse;
+import com.payflow.common.exceptions.DuplicateResourceException;
 import com.payflow.merchantservice.exceptions.InvalidMerchantStateException;
 import com.payflow.merchantservice.exceptions.MerchantAlreadyExistsException;
 import com.payflow.merchantservice.exceptions.MerchantNotFoundException;
@@ -12,6 +13,7 @@ import com.payflow.merchantservice.model.entity.MerchantKyc;
 import com.payflow.merchantservice.model.enums.AddressType;
 import com.payflow.merchantservice.model.enums.KycStatus;
 import com.payflow.merchantservice.model.enums.MerchantStatus;
+import com.payflow.merchantservice.model.enums.MerchantTier;
 import com.payflow.merchantservice.payload.requestDto.CreateMerchantRequest;
 import com.payflow.merchantservice.payload.requestDto.UpdateMerchantRequest;
 import com.payflow.merchantservice.payload.responseDto.AddressResponse;
@@ -22,6 +24,7 @@ import com.payflow.merchantservice.repository.MerchantRepository;
 import com.payflow.merchantservice.security.service.SecurityUtil;
 import com.payflow.merchantservice.service.MerchantService;
 import com.payflow.merchantservice.utils.AddressHashUtility;
+import com.payflow.merchantservice.utils.BankAccountHashUtility;
 import com.payflow.merchantservice.utils.EncryptionUtil;
 import com.payflow.merchantservice.utils.MaskingUtil;
 import lombok.RequiredArgsConstructor;
@@ -49,42 +52,47 @@ public class MerchantServiceImpl implements MerchantService {
     private final MerchantAddressRepository merchantAddressRepository;
     private final MerchantAddressMapper merchantAddressMapper;
 
-
     @Transactional(propagation = Propagation.REQUIRED)
     @Override
     public MerchantResponse createMerchant(Long userId, CreateMerchantRequest request) {
-        // TODO: Implement logic (validation, encryption of PAN, duplicate check, save entity)
-        // if user already exists with merchant role
-        if(merchantRepository.existsByUserId(userId)){
+        if (merchantRepository.existsByUserId(userId)) {
             throw new MerchantAlreadyExistsException(userId);
         }
-        // if business email already exists
-        if (merchantRepository.existsByBusinessEmail(request.getBusinessEmail())){
+        if (merchantRepository.existsByBusinessEmail(request.getBusinessEmail())) {
             throw new MerchantAlreadyExistsException(request.getBusinessEmail());
         }
 
-       Merchant entity = Merchant.builder()
-               .userId(userId)
-               .businessName(request.getBusinessName())
-               .legalName(request.getLegalName())
-               .businessEmail(request.getBusinessEmail())
-               .businessPhone(request.getBusinessPhone())
-               .website(request.getWebsite())
-               .businessCategory(request.getBusinessCategory())
-               .businessType(request.getBusinessType())
-               .gstin(request.getGstin())
-               .panNumberEncrypted(encryptionUtil.encrypt(request.getPanNumber()))
-               .panNumberMasked(MaskingUtil.maskPan(request.getPanNumber()))
-               .status(MerchantStatus.PENDING)
-               .build();
-         merchantRepository.save(entity);
+        String normalizedPan = request.getPanNumber().trim().toUpperCase();
+        String panHash = BankAccountHashUtility.computeHash(normalizedPan);
+        if (merchantRepository.existsByPanNumberHash(panHash)) {
+            throw new DuplicateResourceException("A merchant is already registered with this PAN number");
+        }
 
-        // initial address as registered
+        Merchant entity = Merchant.builder()
+                .userId(userId)
+                .businessName(request.getBusinessName())
+                .legalName(request.getLegalName())
+                .businessEmail(request.getBusinessEmail())
+                .businessPhone(request.getBusinessPhone())
+                .website(request.getWebsite())
+                .businessCategory(request.getBusinessCategory())
+                .businessType(request.getBusinessType())
+                .gstin(request.getGstin())
+                .panNumberEncrypted(encryptionUtil.encrypt(normalizedPan))
+                .panNumberMasked(MaskingUtil.maskPan(normalizedPan))
+                .panNumberHash(panHash)
+                .tier(MerchantTier.MICRO)
+                .isPanVerified(false)
+                .status(MerchantStatus.PENDING)
+                .build();
+        merchantRepository.save(entity);
+
+        // Initial registered address
         MerchantAddress merchantAddress = MerchantAddress.builder()
                 .merchant(entity)
                 .addressType(request.getAddressRequest().getAddressType() != null
                         ? request.getAddressRequest().getAddressType()
-                        : AddressType.REGISTERED) // initial registered address only
+                        : AddressType.REGISTERED)
                 .label(request.getAddressRequest().getLabel() != null
                         ? request.getAddressRequest().getLabel()
                         : "Registered Office")
@@ -102,16 +110,7 @@ public class MerchantServiceImpl implements MerchantService {
         merchantAddressRepository.save(merchantAddress);
         entity.getAddresses().add(merchantAddress);
 
-        // initialize the kyc record
-        merchantKycRepository.save(
-                MerchantKyc.builder()
-                        .merchant(entity)
-                        .status(KycStatus.PENDING)
-                        .build()
-        );
-
         log.info("Merchant created: merchantId={} userId={}", entity.getId(), userId);
-        // mail / notification // for verification
         return toResponseWithAddresses(entity);
     }
 

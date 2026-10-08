@@ -21,12 +21,13 @@ public class BankAccountResponse {
 
 
     private String beneficiaryName; // return by bank after 1 penny drop
-    private double nameMatchScore;
+    private Double nameMatchScore;
 
     private Boolean isPrimary;
     private Boolean isVerified;
+    private String verificationReferenceId;
+    private Instant verifiedAt;
 
     private Instant createdAt;
     private Instant updatedAt;
-
 }

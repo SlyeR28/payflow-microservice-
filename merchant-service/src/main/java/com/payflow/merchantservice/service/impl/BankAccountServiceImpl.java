@@ -23,7 +23,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -100,6 +102,9 @@ public class BankAccountServiceImpl implements BankAccountService {
         log.info("Penny-drop verification completed successfully. Beneficiary: '{}', Name match score: {}%, Verified: {}",
                 beneficiaryName, nameMatchScore, isVerified);
 
+        String verificationRef = "SIM-PENNY-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        Instant verifiedAt = Instant.now();
+
         // 8. Build and persist entity
         BankAccount bankAccount = BankAccount.builder()
                 .merchant(merchant)
@@ -114,6 +119,8 @@ public class BankAccountServiceImpl implements BankAccountService {
                 .nameMatchScore(nameMatchScore)
                 .isPrimary(makePrimary)
                 .isVerified(isVerified)
+                .verificationReferenceId(verificationRef)
+                .verifiedAt(verifiedAt)
                 .build();
 
         BankAccount saved = bankAccountRepository.save(bankAccount);

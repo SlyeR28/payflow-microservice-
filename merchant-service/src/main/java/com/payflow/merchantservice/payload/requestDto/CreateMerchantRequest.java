@@ -5,6 +5,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
@@ -42,6 +43,7 @@ public class CreateMerchantRequest {
 
     @NotBlank(message = "PAN number is required")
     @Size(min = 10, max = 10, message = "PAN must be exactly 10 characters")
+    @Pattern(regexp = "^[A-Za-z]{5}[0-9]{4}[A-Za-z]$", message = "Invalid PAN format. Must be standard 10-character alphanumeric PAN (e.g. ABCDE1234F)")
     private String panNumber;
 
     @Size(max = 30, message = "GSTIN cannot exceed 30 characters")

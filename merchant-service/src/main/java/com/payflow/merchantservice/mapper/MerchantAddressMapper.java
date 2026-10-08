@@ -12,6 +12,7 @@ public interface MerchantAddressMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "merchant", ignore = true)
+    @Mapping(target = "addressHash", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     MerchantAddress toEntity(AddressRequest request);

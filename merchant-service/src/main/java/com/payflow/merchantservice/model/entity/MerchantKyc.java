@@ -38,6 +38,12 @@ public class MerchantKyc {
     @Column(name = "s3_object_key", nullable = false, length = 500)
     private String s3ObjectKey;
 
+    @Column(name = "content_type", length = 100)
+    private String contentType;
+
+    @Column(name = "file_size")
+    private Long fileSize;
+
     @Column(name = "verification_reference_id", length = 100)
     private String verificationReferenceId;
 
