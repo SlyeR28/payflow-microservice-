@@ -68,7 +68,7 @@ public class BankAccountController {
     public ResponseEntity<ApiResponse<Void>> deleteBankAccount(
             @PathVariable Long merchantId,
             @PathVariable Long accountId) {
-        bankAccountService.deleteBankAccount(merchantId, accountId);
+        bankAccountService.deleteBankAccount(merchantId,accountId);
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .success(true)
                 .message("Bank account removed successfully")

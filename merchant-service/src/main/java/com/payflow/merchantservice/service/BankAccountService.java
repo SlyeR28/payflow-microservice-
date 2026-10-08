@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface BankAccountService {
 
-    BankAccountResponse addBankAccount(Long userId, AddBankAccountRequest request);
+    BankAccountResponse addBankAccount(Long merchantId, AddBankAccountRequest request);
 
     List<BankAccountResponse> getBankAccounts(Long merchantId);
 

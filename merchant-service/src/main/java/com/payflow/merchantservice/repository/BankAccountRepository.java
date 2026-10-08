@@ -17,4 +17,8 @@ public interface BankAccountRepository extends JpaRepository<BankAccount, Long> 
     Optional<BankAccount> findByMerchantIdAndIsPrimaryTrue(Long merchantId);
 
     Optional<BankAccount> findByIdAndMerchantId(Long id, Long merchantId);
+
+    Optional<BankAccount> findByMerchantIdAndAccountNumberHash(Long merchantId, String accountNumberHash);
+
+    long countByAccountNumberHash(String accountNumberHash);
 }

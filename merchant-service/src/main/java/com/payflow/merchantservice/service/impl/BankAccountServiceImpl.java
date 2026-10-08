@@ -1,14 +1,21 @@
 package com.payflow.merchantservice.service.impl;
 
+import com.payflow.common.exceptions.BusinessException;
+import com.payflow.merchantservice.exceptions.BankAccountNotFoundException;
 import com.payflow.merchantservice.exceptions.MerchantNotFoundException;
+import com.payflow.merchantservice.exceptions.PrimaryBankAccountCannotBeDeletedException;
 import com.payflow.merchantservice.mapper.BankAccountMapper;
 import com.payflow.merchantservice.model.entity.BankAccount;
 import com.payflow.merchantservice.model.entity.Merchant;
+import com.payflow.merchantservice.model.enums.MerchantStatus;
 import com.payflow.merchantservice.payload.requestDto.AddBankAccountRequest;
 import com.payflow.merchantservice.payload.responseDto.BankAccountResponse;
 import com.payflow.merchantservice.repository.BankAccountRepository;
 import com.payflow.merchantservice.repository.MerchantRepository;
+import com.payflow.common.exceptions.DuplicateResourceException;
+import com.payflow.merchantservice.exceptions.InvalidMerchantStateException;
 import com.payflow.merchantservice.service.BankAccountService;
+import com.payflow.merchantservice.utils.BankAccountHashUtility;
 import com.payflow.merchantservice.utils.EncryptionUtil;
 import com.payflow.merchantservice.utils.MaskingUtil;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -33,21 +39,87 @@ public class BankAccountServiceImpl implements BankAccountService {
     private static final Integer MAX_ACCOUNT = 5;
 
     @Override
-    public BankAccountResponse addBankAccount(Long userId, AddBankAccountRequest request) {
-        // TODO: Implement logic (AES encrypt account number, extract last 4 digits, handle primary flag, penny drop mock/verify)
-        Merchant merchant = merchantRepository.findByUserId(userId)
-                .orElseThrow(() -> new MerchantNotFoundException(userId));
+    public BankAccountResponse addBankAccount(Long merchantId, AddBankAccountRequest request) {
+        Merchant merchant = merchantRepository.findById(merchantId)
+                .orElseThrow(() -> new MerchantNotFoundException(merchantId));
 
-        // 1 Limit checking of user
-        long count = bankAccountRepository.countByMerchantId(merchant.getId());
-        
+        if (merchant.getStatus() == MerchantStatus.SUSPENDED 
+                || merchant.getStatus() == MerchantStatus.REJECTED) {
+            throw new InvalidMerchantStateException("Merchant must be active to add a bank account. Current status: " + merchant.getStatus());
+        }
 
-        return null;
+        // 1. Quota check
+        long count = bankAccountRepository.countByMerchantId(merchantId);
+        if (count >= MAX_ACCOUNT) {
+            throw new BusinessException("Maximum " + MAX_ACCOUNT + " bank accounts allowed",
+                    "BANK_ACCOUNT_LIMIT");
+        }
 
+        // 2. Compute deterministic SHA-256 hash for duplicate check
+        String accountHash = BankAccountHashUtility.computeHash(request.getAccountNumber());
 
+        // 3. Duplicate check for this merchant
+        if (bankAccountRepository.findByMerchantIdAndAccountNumberHash(merchantId, accountHash).isPresent()) {
+            throw new DuplicateResourceException("This bank account is already registered on your profile.");
+        }
 
-//       return bankAccountMapper.toResponse(bankAccountRepository.save(bankAccount));
+        // 4. Syndicate cross-merchant AML fraud alert
+        long globalCount = bankAccountRepository.countByAccountNumberHash(accountHash);
+        if (globalCount >= 2) {
+            log.warn("🚨 [AML-ALERT] Bank account hash {} is linked to {} different merchant accounts! MerchantId={}",
+                    accountHash, globalCount, merchantId);
+        }
 
+        // 5. Encrypt sensitive account number with AES-256-GCM and extract last 4
+        String encryptedAccountNumber = encryptionUtil.encrypt(request.getAccountNumber());
+        String normalizedAccount = BankAccountHashUtility.normalize(request.getAccountNumber());
+        String last4 = normalizedAccount.length() >= 4 
+                ? normalizedAccount.substring(normalizedAccount.length() - 4) 
+                : normalizedAccount;
+
+        // 6. Primary account toggle: If requested or if this is the first account
+        boolean makePrimary = Boolean.TRUE.equals(request.getIsPrimary()) || count == 0;
+        if (makePrimary) {
+            bankAccountRepository.findByMerchantIdAndIsPrimaryTrue(merchantId).ifPresent(
+                    existingPrimary -> {
+                        existingPrimary.setIsPrimary(false);
+                        bankAccountRepository.save(existingPrimary);
+                        log.info("Demoted previous primary bank account: accountId={} for merchantId={}", 
+                                existingPrimary.getId(), merchantId);
+                    });
+        }
+
+        // 7. Simulated penny-drop bank verification
+        log.info("Initiating penny-drop verification for IFSC: {} and account ending with: {}",
+                request.getIfscCode(), last4);
+
+        String beneficiaryName = request.getAccountHolderName();
+        Double nameMatchScore = 100.0;
+        Boolean isVerified = true;
+
+        log.info("Penny-drop verification completed successfully. Beneficiary: '{}', Name match score: {}%, Verified: {}",
+                beneficiaryName, nameMatchScore, isVerified);
+
+        // 8. Build and persist entity
+        BankAccount bankAccount = BankAccount.builder()
+                .merchant(merchant)
+                .accountHolderName(request.getAccountHolderName())
+                .accountNumberEncrypted(encryptedAccountNumber)
+                .accountNumberHash(accountHash)
+                .accountNumberLast4(last4)
+                .accountNumberKeyVersion(1)
+                .ifscCode(request.getIfscCode().toUpperCase().trim())
+                .bankName(request.getBankName().trim())
+                .beneficiaryName(beneficiaryName)
+                .nameMatchScore(nameMatchScore)
+                .isPrimary(makePrimary)
+                .isVerified(isVerified)
+                .build();
+
+        BankAccount saved = bankAccountRepository.save(bankAccount);
+        log.info("Bank account added successfully: accountId={} for merchantId={}", saved.getId(), merchantId);
+
+        return bankAccountMapper.toResponse(saved);
     }
 
     @Override
@@ -67,18 +139,57 @@ public class BankAccountServiceImpl implements BankAccountService {
     @Override
     @Transactional(readOnly = true)
     public BankAccountResponse getBankAccountById(Long accountId) {
-        // TODO: Implement logic (fetch bank account by id)
-        return null;
+        return bankAccountMapper.toResponse(bankAccountRepository.findById(accountId)
+                .orElseThrow(() -> new BankAccountNotFoundException(accountId)));
     }
 
     @Override
     public BankAccountResponse setPrimaryBankAccount(Long merchantId, Long accountId) {
-        // TODO: Implement logic (switch primary bank account)
-        return null;
+
+        BankAccount targetAccount = bankAccountRepository.findByIdAndMerchantId(accountId, merchantId)
+                .orElseThrow(() -> new BankAccountNotFoundException(
+                        String.format("Bank account with ID %d not found " +
+                                "for merchant ID %d", accountId, merchantId)));
+
+        // if target account is already primary, return it
+        if (Boolean.TRUE.equals(targetAccount.getIsPrimary())) {
+            return bankAccountMapper.toResponse(targetAccount);
+        }
+
+        // if merchant has multiple bank accounts, then check if expect this any one is primary or not
+         bankAccountRepository.findByMerchantIdAndIsPrimaryTrue(merchantId).ifPresent(
+                 currentPrimary -> {
+                     currentPrimary.setIsPrimary(false);
+                     bankAccountRepository.save(currentPrimary);
+                     log.info("Demoted previous primary bank account: accountId={} for merchantId={}",
+                             currentPrimary.getId(), merchantId);
+                 });
+         targetAccount.setIsPrimary(true);
+        BankAccount saved = bankAccountRepository.save(targetAccount);
+        log.info("Promoted new primary bank account: accountId={} for merchantId={}",
+                 targetAccount.getId(), merchantId);
+
+        return bankAccountMapper.toResponse(saved);
     }
 
     @Override
     public void deleteBankAccount(Long merchantId, Long accountId) {
-        // TODO: Implement logic (prevent deleting primary account if other accounts exist, remove account)
+        BankAccount bankAccount = bankAccountRepository.findByIdAndMerchantId(accountId , merchantId)
+                .orElseThrow(
+                        () -> new BankAccountNotFoundException(
+                                String.format("Bank account with ID %d not found for merchant ID %d", accountId, merchantId)
+                        ));
+
+
+        if (Boolean.TRUE.equals(bankAccount.getIsPrimary())){
+            long count = bankAccountRepository.countByMerchantId(merchantId);
+            if (count > 1){
+                throw new PrimaryBankAccountCannotBeDeletedException();
+            }
+        }
+
+        bankAccountRepository.delete(bankAccount);
+        log.info("Bank account deleted successfully: accountId={} for merchantId={}", accountId, merchantId);
+
     }
 }

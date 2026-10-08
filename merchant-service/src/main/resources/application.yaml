@@ -41,6 +41,17 @@ app:
     expiration-millis: 900000
   refresh-token:
     expiration-millis: 604800000
+  security:
+    encryption-key: ${ENCRYPTION_SECRET_KEY:payflow-256-bit-aes-gcm-secret-key-32b!}
+
+  storage:
+    s3:
+      endpoint: ${S3_ENDPOINT:http://192.168.1.9:9000}
+      bucket-name: ${S3_BUCKET_NAME:merchant-documents}
+      access-key: ${S3_ACCESS_KEY:admin_payflow_master}
+      secret-key: ${S3_SECRET_KEY:StrongMasterSecretKey#2026Secure}
+      region: ${S3_REGION:us-east-1}
+
 
 management:
   endpoints:
@@ -56,4 +67,5 @@ logging:
     com.payflow.merchant: DEBUG
     org.springframework.security: INFO
     org.hibernate.SQL: DEBUG
+
 
