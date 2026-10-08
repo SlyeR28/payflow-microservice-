@@ -27,12 +27,10 @@ public final class FuzzyMatchUtil {
 
         float p = 0.1f;
 
-        int l = Math.max(4 ,mtp[2]);
+        int l = Math.min(4, mtp[2]);
 
-
-        double k =  j + (l*p *(1-j));
-        System.out.println(k);
-         return k;
+        double k = j + (l * p * (1 - j));
+        return Math.min(1.0, Math.max(0.0, k));
     }
 
     private static int[] matches(String s1, String s2) {
