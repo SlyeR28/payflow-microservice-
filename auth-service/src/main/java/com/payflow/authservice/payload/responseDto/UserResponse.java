@@ -5,6 +5,7 @@ import com.payflow.common.constant.Roles;
 import lombok.*;
 
 import java.time.Instant;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -20,7 +21,7 @@ public class UserResponse {
     private String lastName;
     private String phoneNumber;
     private String avatarUrl;
-    private Roles role;
+    private Set<Roles> roles;
     private UserStatus userStatus;
     private Boolean emailVerified;
     private Boolean isUsernameTemporary;   // true while usernameChangedAt == null

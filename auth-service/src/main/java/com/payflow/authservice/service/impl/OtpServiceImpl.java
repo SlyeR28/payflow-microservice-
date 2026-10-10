@@ -26,6 +26,7 @@ import java.time.temporal.ChronoUnit;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class OtpServiceImpl  implements OtpService {
 
     private static final int OTP_LENGTH = 6;

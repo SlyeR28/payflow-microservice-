@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -32,6 +33,7 @@ public interface OtpCodeRepository extends JpaRepository<OtpCode, Long> {
    * Invalidate all pending OTPs for an email + purpose.
    * Called before issuing a new OTP.
    */
+  @Transactional
   @Modifying
   @Query("""
            UPDATE OtpCode o
@@ -47,6 +49,7 @@ public interface OtpCodeRepository extends JpaRepository<OtpCode, Long> {
   /**
    * Delete expired OTPs. Called by a scheduled cleanup job.
    */
+  @Transactional
   @Modifying
   @Query("DELETE FROM OtpCode o WHERE o.expiresAt < :cutoff")
   int deleteExpiredBefore(@Param("cutoff") Instant cutoff);

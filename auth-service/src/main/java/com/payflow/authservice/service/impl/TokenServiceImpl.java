@@ -10,6 +10,7 @@ import com.payflow.common.security.JwtProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.support.BeanDefinitionDsl;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,8 +43,11 @@ public class TokenServiceImpl  implements TokenService {
     @Override
     @Transactional
     public TokenResponse issueTokens(User user) {
+
+        List<String> rolesName = user.getRoles().stream().map(Enum::name).toList();
+
         String accessToken = jwtProvider.generateToken(
-                user.getId(), user.getEmail(), List.of(user.getRole().name()));
+                user.getId(), user.getEmail(), rolesName);
 
         String familyId = UUID.randomUUID().toString();
         String rawRefreshToken = generateRefreshToken();
@@ -90,8 +94,9 @@ public class TokenServiceImpl  implements TokenService {
         token.setRevokedReason("ROTATED");
         refreshTokenRepository.save(token);
 
-        String newAccessToken = jwtProvider.generateToken(
-                user.getId(), user.getEmail(), List.of(user.getRole().name()));
+        List<String> roleNames = user.getRoles().stream().map(Enum::name).toList();
+        String newAccessToken = jwtProvider.generateToken(user.getId(), user.getEmail(), roleNames);
+
 
         String newRawRefresh = generateRefreshToken();
         refreshTokenRepository.save(RefreshToken.builder()

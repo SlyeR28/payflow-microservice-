@@ -24,13 +24,17 @@ import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashSet;
+import java.util.Set;
 
 @Slf4j
 @RequiredArgsConstructor
 @Service
+@Transactional
 public class AuthServiceImpl  implements AuthService {
 
      private static final int MAX_FAILED_ATTEMPTS = 5;
@@ -46,6 +50,7 @@ public class AuthServiceImpl  implements AuthService {
      private final UserNameGenerator userNameGenerator;
 
 
+     @Transactional
     @Override
     public MessageResponse registerUser(RegisterRequest registerRequest) {
          // checking the password and confirm password are equal or not
@@ -72,12 +77,18 @@ public class AuthServiceImpl  implements AuthService {
             throw new EmailAlreadyRegisteredException(registerRequest.getEmail());
         }
 
+        Set<Roles>assignedRoles  = new HashSet<>();
+         assignedRoles.add(Roles.CUSTOMER); // for every user Customer
+
+        if (registerRequest.getRoles() != null && !registerRequest.getRoles().isEmpty()) {
+            assignedRoles.addAll(registerRequest.getRoles());
+        }
         User user = User.builder()
                 .userName(userName)
                 .email(registerRequest.getEmail())
                 .firstName(registerRequest.getFirstName())
                 .lastName(registerRequest.getLastName())
-                .role(Roles.CUSTOMER)
+                .roles(assignedRoles)
                 .userStatus(UserStatus.PENDING_VERIFICATION)
                 .emailVerified(false)
                 .failedAttempts(0)

@@ -133,10 +133,11 @@ public class MerchantServiceImpl implements MerchantService {
     @Override
     @Transactional(readOnly = true)
     public MerchantResponse getMerchantByUserId(Long userId) {
-        boolean b = securityUtil.hasRole("MERCHANT");
+        boolean b = securityUtil.hasAnyRole("MERCHANT", "ADMIN");
         if (!b) {
             throw new MerchantNotFoundException(userId);
         }
+
         return toResponseWithAddresses(merchantRepository
                 .findByUserId(userId).orElseThrow(() -> new MerchantNotFoundException(userId)));
     }

@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(
@@ -52,9 +54,12 @@ public class User {
     @Column(name = "avatar_url", length = 500)
     private String avatarUrl;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_roles" , joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false , length = 50)
-    private Roles role;
+    @Column(name = "role", nullable = false , length = 50)
+    @Builder.Default
+    private Set<Roles> roles = new HashSet<>();
 
     @Enumerated(EnumType.STRING)
     @Column(name = "user_status" , nullable = false , length = 50)
@@ -94,6 +99,23 @@ public class User {
     private Integer userNameReminderCount;
 
 
+    public void addRole(Roles role){
+        if (this.roles == null){
+            this.roles = new HashSet<>();
+        }
+        this.roles.add(role);
+    }
+
+    public void removeRole(Roles role){
+        if (this.roles != null){
+            this.roles.remove(role);
+        }
+    }
+
+    public boolean hasRole(Roles role){
+        return this.roles != null && this.roles.contains(role);
+    }
+
 
     @PrePersist
     public void onCreate(){
@@ -101,7 +123,11 @@ public class User {
         createdAt = now;
         updatedAt = now;
 
-        if (role == null) role = Roles.CUSTOMER;
+        if (roles == null || roles.isEmpty()) {
+            roles = new HashSet<>();
+            roles.add(Roles.CUSTOMER);
+        }
+
         if (userStatus == null)userStatus = UserStatus.PENDING_VERIFICATION;
         if (emailVerified == null)emailVerified = false;
         if (failedAttempts == null)failedAttempts = 0;

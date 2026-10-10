@@ -102,6 +102,13 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- AWS SDK v2 S3 — MinIO / S3 Object Storage for user avatars -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <version>2.29.51</version>
+        </dependency>
+
     </dependencies>
 
     <build>

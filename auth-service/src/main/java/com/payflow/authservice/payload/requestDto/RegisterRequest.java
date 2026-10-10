@@ -1,10 +1,13 @@
 package com.payflow.authservice.payload.requestDto;
 
+import com.payflow.common.constant.Roles;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+
+import java.util.Set;
 
 @Getter
 @Setter
@@ -40,5 +43,7 @@ public class RegisterRequest {
     @NotBlank(message = "Last Name is Required")
     @Size(max = 50, message = "Last Name must be between 1 and 50 characters")
     private String lastName;
+
+    private Set<Roles> roles;
 
 }

@@ -5,6 +5,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 @Component
 public class SecurityUtil {
 
@@ -36,4 +40,20 @@ public class SecurityUtil {
         return authentication.getAuthorities().stream()
                 .anyMatch(auth -> auth.getAuthority().equals("ROLE_" + role));
     }
+
+    public boolean hasAnyRole(String... roles) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            return false;
+        }
+        Set<String> expected = Arrays.stream(roles)
+                .map(r -> "ROLE_" + r)
+                .collect(Collectors.toSet());
+        return authentication.getAuthorities().stream()
+                .anyMatch(auth -> expected.contains(auth.getAuthority()));
+    }
+    public boolean isMerchantOrAdmin() {
+        return hasAnyRole("MERCHANT", "ADMIN");
+    }
+
 }

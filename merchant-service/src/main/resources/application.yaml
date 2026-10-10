@@ -1,6 +1,9 @@
 spring:
   application:
     name: merchant-service
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
 
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/merchant?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true}
@@ -46,7 +49,7 @@ app:
 
   storage:
     s3:
-      endpoint: ${S3_ENDPOINT:http://192.168.1.9:9000}
+      endpoint: ${S3_ENDPOINT:http://192.168.1.18:9000}
       bucket-name: ${S3_BUCKET_NAME:merchant-documents}
       access-key: ${S3_ACCESS_KEY:admin_payflow_master}
       secret-key: ${S3_SECRET_KEY:StrongMasterSecretKey#2026Secure}
