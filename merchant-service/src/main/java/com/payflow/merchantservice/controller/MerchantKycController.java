@@ -4,10 +4,7 @@ import com.payflow.common.dto.ApiResponse;
 import com.payflow.merchantservice.payload.requestDto.KycConfirmRequest;
 import com.payflow.merchantservice.payload.requestDto.KycUploadUrlRequest;
 import com.payflow.merchantservice.payload.requestDto.VerifyKycRequest;
-import com.payflow.merchantservice.payload.responseDto.KycDocumentResponse;
-import com.payflow.merchantservice.payload.responseDto.KycStatusResponse;
-import com.payflow.merchantservice.payload.responseDto.MerchantResponse;
-import com.payflow.merchantservice.payload.responseDto.UploadUrlResponse;
+import com.payflow.merchantservice.payload.responseDto.*;
 import com.payflow.merchantservice.service.MerchantKycService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -84,6 +81,18 @@ public class MerchantKycController {
         return ResponseEntity.ok(ApiResponse.<MerchantResponse>builder()
                 .success(true)
                 .message("KYC submitted for review successfully")
+                .data(response)
+                .build());
+    }
+
+    @GetMapping("/documents/{documentId}/download-url")
+    public ResponseEntity<ApiResponse<DownloadUrlResponse>> getDownloadUrl(
+            @PathVariable Long merchantId,
+            @PathVariable Long documentId
+    ){
+        DownloadUrlResponse response = merchantKycService.generateDownloadUrl(merchantId, documentId);
+        return ResponseEntity.ok(ApiResponse.<DownloadUrlResponse>builder()
+                .success(true)
                 .data(response)
                 .build());
     }

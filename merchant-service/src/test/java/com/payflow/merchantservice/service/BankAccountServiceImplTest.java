@@ -41,6 +41,9 @@ class BankAccountServiceImplTest {
     @Mock
     private EncryptionUtil encryptionUtil;
 
+    @Mock
+    private com.payflow.merchantservice.service.verification.impl.VerificationEngineService verificationEngineService;
+
     @InjectMocks
     private BankAccountServiceImpl bankAccountService;
 
@@ -83,6 +86,13 @@ class BankAccountServiceImplTest {
                 .build();
 
         when(bankAccountRepository.save(any(BankAccount.class))).thenReturn(savedEntity);
+        when(bankAccountRepository.findById(10L)).thenReturn(Optional.of(savedEntity));
+        when(verificationEngineService.verifyBankAccount(eq(1L), any()))
+                .thenReturn(com.payflow.merchantservice.service.verification.dto.PennyDropResult.builder()
+                        .successful(true)
+                        .nameMatched(true)
+                        .nameMatchScore(100.0)
+                        .build());
 
         BankAccountResponse expectedResponse = BankAccountResponse.builder()
                 .id(10L)

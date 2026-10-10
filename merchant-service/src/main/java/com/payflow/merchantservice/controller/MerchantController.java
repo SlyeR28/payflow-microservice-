@@ -50,11 +50,11 @@ public class MerchantController {
                 .build());
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{merchantId}")
     public ResponseEntity<ApiResponse<MerchantResponse>> updateMerchant(
-             @PathVariable Long id,
+             @PathVariable Long merchantId,
             @Valid @RequestBody UpdateMerchantRequest request) {
-        MerchantResponse response = merchantService.updateMerchant(id, request);
+        MerchantResponse response = merchantService.updateMerchant(merchantId, request);
         return ResponseEntity.ok(ApiResponse.<MerchantResponse>builder()
                 .success(true)
                 .message("Merchant profile updated successfully")
@@ -62,4 +62,13 @@ public class MerchantController {
                 .build());
     }
 
+    @PostMapping("/{id}/verify-pan")
+    public ResponseEntity<ApiResponse<MerchantResponse>> verifyPan(@PathVariable Long id) {
+        MerchantResponse response = merchantService.verifyPan(id);
+        return ResponseEntity.ok(ApiResponse.<MerchantResponse>builder()
+                .success(true)
+                .message("Merchant PAN verified successfully")
+                .data(response)
+                .build());
+    }
 }

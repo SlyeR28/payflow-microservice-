@@ -1,7 +1,9 @@
 package com.payflow.merchantservice.service.impl;
 
 import com.payflow.common.dto.PagedResponse;
+import com.payflow.common.exceptions.BusinessException;
 import com.payflow.common.exceptions.DuplicateResourceException;
+import com.payflow.common.exceptions.ForbiddenException;
 import com.payflow.merchantservice.exceptions.InvalidMerchantStateException;
 import com.payflow.merchantservice.exceptions.MerchantAlreadyExistsException;
 import com.payflow.merchantservice.exceptions.MerchantNotFoundException;
@@ -13,16 +15,18 @@ import com.payflow.merchantservice.model.entity.MerchantKyc;
 import com.payflow.merchantservice.model.enums.AddressType;
 import com.payflow.merchantservice.model.enums.KycStatus;
 import com.payflow.merchantservice.model.enums.MerchantStatus;
-import com.payflow.merchantservice.model.enums.MerchantTier;
 import com.payflow.merchantservice.payload.requestDto.CreateMerchantRequest;
 import com.payflow.merchantservice.payload.requestDto.UpdateMerchantRequest;
 import com.payflow.merchantservice.payload.responseDto.AddressResponse;
 import com.payflow.merchantservice.payload.responseDto.MerchantResponse;
+import com.payflow.merchantservice.repository.BankAccountRepository;
 import com.payflow.merchantservice.repository.MerchantAddressRepository;
 import com.payflow.merchantservice.repository.MerchantKycRepository;
 import com.payflow.merchantservice.repository.MerchantRepository;
 import com.payflow.merchantservice.security.service.SecurityUtil;
 import com.payflow.merchantservice.service.MerchantService;
+import com.payflow.merchantservice.service.verification.dto.VerificationResult;
+import com.payflow.merchantservice.service.verification.impl.VerificationEngineService;
 import com.payflow.merchantservice.utils.AddressHashUtility;
 import com.payflow.merchantservice.utils.BankAccountHashUtility;
 import com.payflow.merchantservice.utils.EncryptionUtil;
@@ -51,6 +55,8 @@ public class MerchantServiceImpl implements MerchantService {
     private final MerchantKycRepository merchantKycRepository;
     private final MerchantAddressRepository merchantAddressRepository;
     private final MerchantAddressMapper merchantAddressMapper;
+    private final BankAccountRepository bankAccountRepository;
+    private final VerificationEngineService verificationEngineService;
 
     @Transactional(propagation = Propagation.REQUIRED)
     @Override
@@ -81,8 +87,8 @@ public class MerchantServiceImpl implements MerchantService {
                 .panNumberEncrypted(encryptionUtil.encrypt(normalizedPan))
                 .panNumberMasked(MaskingUtil.maskPan(normalizedPan))
                 .panNumberHash(panHash)
-                .tier(MerchantTier.MICRO)
                 .isPanVerified(false)
+                .isBankVerified(false)
                 .status(MerchantStatus.PENDING)
                 .build();
         merchantRepository.save(entity);
@@ -110,6 +116,15 @@ public class MerchantServiceImpl implements MerchantService {
         merchantAddressRepository.save(merchantAddress);
         entity.getAddresses().add(merchantAddress);
 
+        // Trigger Verification Engine for automatic PAN verification
+        try {
+            VerificationResult panResult = verificationEngineService.verifyMerchantPan(entity.getId());
+            log.info("Initial PAN verification for merchantId={}: success={}", entity.getId(), panResult.isSuccessful());
+            entity = merchantRepository.findById(entity.getId()).orElse(entity);
+        } catch (Exception ex) {
+            log.warn("Initial PAN verification encountered an error for merchantId={}: {}", entity.getId(), ex.getMessage());
+        }
+
         log.info("Merchant created: merchantId={} userId={}", entity.getId(), userId);
         return toResponseWithAddresses(entity);
     }
@@ -128,11 +143,18 @@ public class MerchantServiceImpl implements MerchantService {
 
 
     @Override
-    public MerchantResponse updateMerchant(Long userId, UpdateMerchantRequest request) {
+    public MerchantResponse updateMerchant(Long merchantId, UpdateMerchantRequest request) {
         // find by merchant id
-        Merchant merchant = merchantRepository.findByUserId(userId)
-                .orElseThrow(() -> new MerchantNotFoundException(userId));
+        Merchant merchant = merchantRepository.findById(merchantId)
+                .orElseThrow(() -> new MerchantNotFoundException(merchantId));
 
+        // ownership verification: logged in user must be merchant or ADMIN
+        Long currentUserId = securityUtil.getCurrentUserId();
+        if (!merchant.getUserId().equals(currentUserId) && !securityUtil.hasRole("ADMIN")){
+            throw new ForbiddenException("You are not authorized to update this merchant");
+        }
+
+        // state validation
         if (merchant.getStatus() == MerchantStatus.SUSPENDED){
             throw new InvalidMerchantStateException("Suspended merchants cannot update profile");
         }
@@ -146,7 +168,11 @@ public class MerchantServiceImpl implements MerchantService {
         if (request.getBusinessPhone() != null) merchant.setBusinessPhone(request.getBusinessPhone());
         if (request.getWebsite()       != null) merchant.setWebsite(request.getWebsite());
 
-        return merchantMapper.toResponse(merchantRepository.save(merchant));
+       //Save and return full response including address details
+        Merchant saved = merchantRepository.save(merchant);
+        log.info("Merchant profile updated: merchantId={} by userId={}", merchantId, currentUserId);
+        return toResponseWithAddresses(saved);
+
     }
 
 
@@ -161,12 +187,37 @@ public class MerchantServiceImpl implements MerchantService {
 
 
     @Override
+    public MerchantResponse verifyPan(Long merchantId) {
+        Merchant merchant = merchantRepository.findById(merchantId)
+                .orElseThrow(() -> new MerchantNotFoundException(merchantId));
+        VerificationResult result = verificationEngineService.verifyMerchantPan(merchantId);
+        if (!result.isSuccessful()) {
+            throw new BusinessException("PAN verification failed: " + result.getFailureReason(), "PAN_VERIFICATION_FAILED");
+        }
+        Merchant updated = merchantRepository.findById(merchantId).orElse(merchant);
+        return toResponseWithAddresses(updated);
+    }
+
+    @Override
     public MerchantResponse approve(Long merchantId, Long adminId) {
         Merchant merchant = merchantRepository.findById(merchantId)
                 .orElseThrow(() -> new MerchantNotFoundException(merchantId));
 
         if (merchant.getStatus() == MerchantStatus.ACTIVE){
             throw new InvalidMerchantStateException("Active merchants cannot be approved");
+        }
+
+        // Invariant: Merchant is only active when both PAN and Bank account are verified!
+        if (!Boolean.TRUE.equals(merchant.getIsPanVerified())) {
+            throw new InvalidMerchantStateException("Merchant cannot be approved: PAN is not verified");
+        }
+
+        boolean hasVerifiedBank = Boolean.TRUE.equals(merchant.getIsBankVerified()) ||
+                bankAccountRepository.findByMerchantId(merchantId).stream()
+                        .anyMatch(ba -> Boolean.TRUE.equals(ba.getIsVerified()));
+
+        if (!hasVerifiedBank) {
+            throw new InvalidMerchantStateException("Merchant cannot be approved: Bank account is not verified");
         }
 
         merchant.setStatus(MerchantStatus.ACTIVE);
@@ -177,8 +228,7 @@ public class MerchantServiceImpl implements MerchantService {
 
         log.info("Merchant approved: merchantId={} adminUserId={}", merchantId, adminId);
 
-
-        return merchantMapper.toResponse(merchant);
+        return toResponseWithAddresses(merchant);
     }
 
     @Override

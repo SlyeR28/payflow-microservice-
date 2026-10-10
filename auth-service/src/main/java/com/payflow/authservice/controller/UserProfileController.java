@@ -19,14 +19,14 @@ public class UserProfileController {
     private final UserService userService;
 
     // get userprofile
-    @GetMapping
+    @GetMapping("/me")
     public ResponseEntity<UserResponse> getUserProfile(@AuthenticationPrincipal Long userId) {
         UserResponse userProfileResponse = userService.getProfile(userId);
         return ResponseEntity.status(HttpStatus.OK).body(userProfileResponse);
     }
 
     // update profile
-    @PutMapping
+    @PutMapping("/update")
     public ResponseEntity<UserResponse> updateUserProfile(@AuthenticationPrincipal Long userId,
                                                           @Valid @RequestBody UpdateProfileRequest updateProfileRequest) {
         UserResponse userProfileResponse = userService.updateProfile(userId, updateProfileRequest);

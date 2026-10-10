@@ -3,6 +3,7 @@ package com.payflow.merchantservice.service;
 import com.payflow.merchantservice.model.enums.GatewayProvider;
 import com.payflow.merchantservice.payload.requestDto.AddGatewayCredentialsRequest;
 import com.payflow.merchantservice.payload.responseDto.GatewayCredentialsResponse;
+import com.payflow.merchantservice.payload.responseDto.InternalGatewayCredentialResponse;
 
 import java.util.List;
 
@@ -17,4 +18,6 @@ public interface GatewayCredentialsService {
     void deactivateGateway(Long merchantId, GatewayProvider gatewayType);
 
     void deleteGateway(Long merchantId, GatewayProvider gatewayType);
+
+    InternalGatewayCredentialResponse getInternalGatewayCredentials(Long merchantId, GatewayProvider gatewayType);
 }

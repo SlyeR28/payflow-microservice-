@@ -28,4 +28,16 @@ public class GateWayRouteConfig {
                 .build();
     }
 
+    @Bean
+    public RouterFunction<ServerResponse> merchantServiceRoute(){
+        return GatewayRouterFunctions.route("merchant-service")
+                .route(
+                        request -> request.path().startsWith("/api/v1/merchants") ||
+                                request.path().startsWith("/api/v1/admin/merchants"),
+                        HandlerFunctions.http()
+                )
+                .filter(lb("merchant-service"))
+                .build();
+    }
+
 }

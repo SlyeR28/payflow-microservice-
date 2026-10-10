@@ -2,7 +2,6 @@ package com.payflow.merchantservice.payload.responseDto;
 
 import com.payflow.merchantservice.model.enums.BusinessType;
 import com.payflow.merchantservice.model.enums.MerchantStatus;
-import com.payflow.merchantservice.model.enums.MerchantTier;
 import lombok.*;
 
 import java.time.Instant;
@@ -27,11 +26,10 @@ public class MerchantResponse {
     private String gstin;
     private MerchantStatus status;
     private BusinessType businessType;
-    private MerchantTier tier;
     private Boolean isPanVerified;
     private Instant panVerifiedAt;
-    private Long monthlyVolumeLimit;
-    private Long maxTransactionLimit;
+    private Boolean isBankVerified;
+    private Instant bankVerifiedAt;
     private String rejectReason;
     private Instant approvedAt;
     private Instant createdAt;

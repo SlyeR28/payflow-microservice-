@@ -16,4 +16,6 @@ public interface BankAccountService {
     BankAccountResponse setPrimaryBankAccount(Long merchantId, Long accountId);
 
     void deleteBankAccount(Long merchantId, Long accountId);
+ 
+    BankAccountResponse verifyBankAccount(Long merchantId, Long accountId);
 }

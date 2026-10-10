@@ -4,6 +4,7 @@ import com.payflow.common.dto.ApiResponse;
 import com.payflow.merchantservice.model.enums.GatewayProvider;
 import com.payflow.merchantservice.payload.requestDto.AddGatewayCredentialsRequest;
 import com.payflow.merchantservice.payload.responseDto.GatewayCredentialsResponse;
+import com.payflow.merchantservice.payload.responseDto.InternalGatewayCredentialResponse;
 import com.payflow.merchantservice.service.GatewayCredentialsService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -73,6 +74,17 @@ public class GatewayCredentialsController {
         return ResponseEntity.ok(ApiResponse.<Void>builder()
                 .success(true)
                 .message("Gateway credentials removed successfully")
+                .build());
+    }
+
+    @GetMapping("/{gatewayType}/internal")
+    public ResponseEntity<ApiResponse<InternalGatewayCredentialResponse>> getInternalCredentials(
+            @PathVariable Long merchantId,
+            @PathVariable GatewayProvider gatewayType) {
+        InternalGatewayCredentialResponse response = gatewayCredentialsService.getInternalGatewayCredentials(merchantId, gatewayType);
+        return ResponseEntity.ok(ApiResponse.<InternalGatewayCredentialResponse>builder()
+                .success(true)
+                .data(response)
                 .build());
     }
 }

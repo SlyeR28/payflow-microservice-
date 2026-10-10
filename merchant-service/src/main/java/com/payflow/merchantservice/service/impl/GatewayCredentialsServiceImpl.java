@@ -11,6 +11,7 @@ import com.payflow.merchantservice.model.enums.GatewayProvider;
 import com.payflow.merchantservice.model.enums.MerchantStatus;
 import com.payflow.merchantservice.payload.requestDto.AddGatewayCredentialsRequest;
 import com.payflow.merchantservice.payload.responseDto.GatewayCredentialsResponse;
+import com.payflow.merchantservice.payload.responseDto.InternalGatewayCredentialResponse;
 import com.payflow.merchantservice.repository.GatewayCredentialsRepository;
 import com.payflow.merchantservice.repository.MerchantRepository;
 import com.payflow.merchantservice.service.GatewayCredentialsService;
@@ -126,6 +127,38 @@ public class GatewayCredentialsServiceImpl implements GatewayCredentialsService 
 
         gatewayCredentialsRepository.delete(credentials);
         log.info("Deleted gateway credentials: {} for merchant: {}", gatewayType, merchantId);
+    }
+
+    @Override
+    public InternalGatewayCredentialResponse getInternalGatewayCredentials(Long merchantId, GatewayProvider gatewayType) {
+        Merchant merchant = merchantRepository.findById(merchantId).orElseThrow(() ->
+                new MerchantNotFoundException("Merchant Not Found with Given Id: " + merchantId)
+        );
+
+        GatewayCredentials gatewayCredentials = gatewayCredentialsRepository.findByMerchantIdAndGatewayType(merchantId, gatewayType)
+                .orElseThrow(() ->
+                        new GatewayCredentialsNotFoundException("Credential Not Found for Gateway: " + gatewayType));
+
+        if (Boolean.TRUE.equals(gatewayCredentials.getIsActive())){
+            throw new InvalidGatewayCredentialsException("Gateway Credentials are all ready Verified....");
+        }
+
+        String apiKey = encryptionUtil.decrypt(gatewayCredentials.getApiKeyEncrypted());
+        String apiSecret = encryptionUtil.decrypt(gatewayCredentials.getApiSecretEncrypted());
+
+        String webhookSecret = gatewayCredentials.getWebhookSecretEncrypted() != null ?
+                encryptionUtil.decrypt(gatewayCredentials.getWebhookSecretEncrypted()) : null;
+
+        return InternalGatewayCredentialResponse.builder()
+                .merchantId(merchantId)
+                .gatewayType(gatewayType)
+                .apiKey(apiKey)
+                .apiSecret(apiSecret)
+                .webhookSecret(webhookSecret)
+                .isTestMode(gatewayCredentials.getIsTestMode())
+                .isActive(gatewayCredentials.getIsActive())
+                .build();
+
     }
 
     private GatewayCredentialsResponse mapWithMaskedKey(GatewayCredentials creds) {

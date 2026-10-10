@@ -16,11 +16,7 @@ import com.payflow.merchantservice.model.enums.MerchantStatus;
 import com.payflow.merchantservice.payload.requestDto.KycConfirmRequest;
 import com.payflow.merchantservice.payload.requestDto.KycUploadUrlRequest;
 import com.payflow.merchantservice.payload.requestDto.VerifyKycRequest;
-import com.payflow.merchantservice.payload.responseDto.AddressResponse;
-import com.payflow.merchantservice.payload.responseDto.KycDocumentResponse;
-import com.payflow.merchantservice.payload.responseDto.KycStatusResponse;
-import com.payflow.merchantservice.payload.responseDto.MerchantResponse;
-import com.payflow.merchantservice.payload.responseDto.UploadUrlResponse;
+import com.payflow.merchantservice.payload.responseDto.*;
 import com.payflow.merchantservice.repository.MerchantAddressRepository;
 import com.payflow.merchantservice.repository.MerchantKycRepository;
 import com.payflow.merchantservice.repository.MerchantRepository;
@@ -157,6 +153,7 @@ public class MerchantKycServiceImpl implements MerchantKycService {
                 .merchantId(merchantId)
                 .merchantStatus(merchant.getStatus())
                 .isPanVerified(merchant.getIsPanVerified())
+                .isBankVerified(merchant.getIsBankVerified())
                 .totalDocuments(docs.size())
                 .verifiedDocuments(verified)
                 .pendingDocuments(pending)
@@ -218,6 +215,34 @@ public class MerchantKycServiceImpl implements MerchantKycService {
         log.info("KYC submitted for review: merchantId={}, documentsCount={}", merchantId, docs.size());
 
         return toMerchantResponseWithAddresses(savedMerchant);
+    }
+
+    @Override
+    public DownloadUrlResponse generateDownloadUrl(Long merchantId, Long documentId) {
+        Merchant merchant = merchantRepository.findById(merchantId).orElseThrow(() ->
+                new MerchantNotFoundException(merchantId));
+
+        MerchantKyc merchantKyc = merchantKycRepository.findById(documentId).orElseThrow(() ->
+                new KycDocumentNotFoundException(documentId));
+
+        if (!merchantKyc.getMerchant().getId().equals(merchantId)){
+            throw new KycDocumentNotFoundException(
+                    "Document with id " + documentId + " does not belong to merchant " + merchantId);
+        }
+
+        if (merchantKyc.getS3ObjectKey() == null || merchantKyc.getS3ObjectKey().isBlank()){
+            throw new InvalidKycStateException(
+                    "Document with id " + documentId + " does not have a valid S3 object key");
+        }
+
+        String downloadUrl = secureStorageService
+                .generateDownloadPresignedUrl(merchantKyc.getS3ObjectKey() , Duration.ofMinutes(15));
+        return DownloadUrlResponse.builder()
+                .downloadUrl(downloadUrl)
+                .s3Key(merchantKyc.getS3ObjectKey())
+                .expiryInMinutes(15)
+                .build();
+
     }
 
     private MerchantResponse toMerchantResponseWithAddresses(Merchant merchant) {

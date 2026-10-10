@@ -15,7 +15,9 @@ public interface MerchantService {
 
     MerchantResponse getMerchantByUserId(Long userId);
 
-    MerchantResponse updateMerchant(Long userId, UpdateMerchantRequest request);
+    MerchantResponse updateMerchant(Long merchantId, UpdateMerchantRequest request);
+
+    MerchantResponse verifyPan(Long merchantId);
 
 
     // Amin(uses merchantId)

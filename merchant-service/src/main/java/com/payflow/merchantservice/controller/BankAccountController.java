@@ -74,4 +74,16 @@ public class BankAccountController {
                 .message("Bank account removed successfully")
                 .build());
     }
+
+    @PostMapping("/{accountId}/verify")
+    public ResponseEntity<ApiResponse<BankAccountResponse>> verifyBankAccount(
+            @PathVariable Long merchantId,
+            @PathVariable Long accountId) {
+        BankAccountResponse response = bankAccountService.verifyBankAccount(merchantId, accountId);
+        return ResponseEntity.ok(ApiResponse.<BankAccountResponse>builder()
+                .success(true)
+                .message("Bank account verified successfully")
+                .data(response)
+                .build());
+    }
 }

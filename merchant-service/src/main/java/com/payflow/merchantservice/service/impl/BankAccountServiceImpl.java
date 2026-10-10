@@ -18,6 +18,8 @@ import com.payflow.merchantservice.service.BankAccountService;
 import com.payflow.merchantservice.utils.BankAccountHashUtility;
 import com.payflow.merchantservice.utils.EncryptionUtil;
 import com.payflow.merchantservice.utils.MaskingUtil;
+import com.payflow.merchantservice.service.verification.dto.VerificationResult;
+import com.payflow.merchantservice.service.verification.impl.VerificationEngineService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,6 +39,7 @@ public class BankAccountServiceImpl implements BankAccountService {
     private final BankAccountRepository bankAccountRepository;
     private final BankAccountMapper bankAccountMapper;
     private final EncryptionUtil encryptionUtil;
+    private final VerificationEngineService verificationEngineService;
 
     private static final Integer MAX_ACCOUNT = 5;
 
@@ -91,21 +94,7 @@ public class BankAccountServiceImpl implements BankAccountService {
                     });
         }
 
-        // 7. Simulated penny-drop bank verification
-        log.info("Initiating penny-drop verification for IFSC: {} and account ending with: {}",
-                request.getIfscCode(), last4);
-
-        String beneficiaryName = request.getAccountHolderName();
-        Double nameMatchScore = 100.0;
-        Boolean isVerified = true;
-
-        log.info("Penny-drop verification completed successfully. Beneficiary: '{}', Name match score: {}%, Verified: {}",
-                beneficiaryName, nameMatchScore, isVerified);
-
-        String verificationRef = "SIM-PENNY-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        Instant verifiedAt = Instant.now();
-
-        // 8. Build and persist entity
+        // 7. Build and persist entity initially in unverified state
         BankAccount bankAccount = BankAccount.builder()
                 .merchant(merchant)
                 .accountHolderName(request.getAccountHolderName())
@@ -115,16 +104,21 @@ public class BankAccountServiceImpl implements BankAccountService {
                 .accountNumberKeyVersion(1)
                 .ifscCode(request.getIfscCode().toUpperCase().trim())
                 .bankName(request.getBankName().trim())
-                .beneficiaryName(beneficiaryName)
-                .nameMatchScore(nameMatchScore)
                 .isPrimary(makePrimary)
-                .isVerified(isVerified)
-                .verificationReferenceId(verificationRef)
-                .verifiedAt(verifiedAt)
+                .isVerified(false)
                 .build();
 
         BankAccount saved = bankAccountRepository.save(bankAccount);
-        log.info("Bank account added successfully: accountId={} for merchantId={}", saved.getId(), merchantId);
+        log.info("Bank account created: accountId={} for merchantId={}. Triggering verification engine...", saved.getId(), merchantId);
+
+        // 8. Trigger Verification Engine for Penny Drop
+        try {
+            VerificationResult verificationResult = verificationEngineService.verifyBankAccount(merchantId, saved.getId());
+            log.info("Penny drop verification for accountId={}: success={}", saved.getId(), verificationResult.isSuccessful());
+            saved = bankAccountRepository.findById(saved.getId()).orElse(saved);
+        } catch (Exception e) {
+            log.warn("Penny drop verification encountered an error for accountId={}: {}", saved.getId(), e.getMessage());
+        }
 
         return bankAccountMapper.toResponse(saved);
     }
@@ -198,5 +192,32 @@ public class BankAccountServiceImpl implements BankAccountService {
         bankAccountRepository.delete(bankAccount);
         log.info("Bank account deleted successfully: accountId={} for merchantId={}", accountId, merchantId);
 
+        // Re-evaluate whether merchant still has any verified bank account
+        boolean stillHasVerifiedBank = bankAccountRepository.findByMerchantId(merchantId)
+                .stream()
+                .anyMatch(ba -> !ba.getId().equals(accountId) && Boolean.TRUE.equals(ba.getIsVerified()));
+
+        if (!stillHasVerifiedBank) {
+            merchantRepository.findById(merchantId).ifPresent(m -> {
+                m.setIsBankVerified(false);
+                if (m.getStatus() == MerchantStatus.ACTIVE) {
+                    m.setStatus(MerchantStatus.UNDER_REVIEW);
+                    log.warn("Merchant {} demoted to UNDER_REVIEW because no verified bank account remains", merchantId);
+                }
+                merchantRepository.save(m);
+            });
+        }
+    }
+
+    @Override
+    public BankAccountResponse verifyBankAccount(Long merchantId, Long accountId) {
+        VerificationResult result = verificationEngineService.verifyBankAccount(merchantId, accountId);
+        if (!result.isSuccessful()) {
+            throw new BusinessException("Bank account verification failed: " + result.getFailureReason(), "BANK_VERIFICATION_FAILED");
+        }
+        BankAccount bankAccount = bankAccountRepository.findByIdAndMerchantId(accountId, merchantId)
+                .orElseThrow(() -> new BankAccountNotFoundException(
+                        String.format("Bank account with ID %d not found for merchant ID %d", accountId, merchantId)));
+        return bankAccountMapper.toResponse(bankAccount);
     }
 }

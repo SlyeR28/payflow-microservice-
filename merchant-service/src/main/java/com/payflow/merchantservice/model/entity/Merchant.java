@@ -2,7 +2,6 @@ package com.payflow.merchantservice.model.entity;
 
 import com.payflow.merchantservice.model.enums.BusinessType;
 import com.payflow.merchantservice.model.enums.MerchantStatus;
-import com.payflow.merchantservice.model.enums.MerchantTier;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -64,17 +63,12 @@ public class Merchant {
 
     @Column(name = "pan_verified_at")
     private Instant panVerifiedAt;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "tier", nullable = false, length = 30)
+    @Column(name = "is_bank_verified", nullable = false)
     @Builder.Default
-    private MerchantTier tier = MerchantTier.MICRO;
+    private Boolean isBankVerified = false;
 
-    @Column(name = "monthly_volume_limit")
-    private Long monthlyVolumeLimit;
-
-    @Column(name = "max_transaction_limit")
-    private Long maxTransactionLimit;
+    @Column(name = "bank_verified_at")
+    private Instant bankVerifiedAt;
 
     @Column(name = "gstin", length = 30)
     private String gstin;
@@ -125,11 +119,11 @@ public class Merchant {
         if (status == null) {
             status = MerchantStatus.PENDING;
         }
-        if (tier == null) {
-            tier = MerchantTier.MICRO;
-        }
         if (isPanVerified == null) {
             isPanVerified = false;
+        }
+        if (isBankVerified == null) {
+            isBankVerified = false;
         }
     }
 
