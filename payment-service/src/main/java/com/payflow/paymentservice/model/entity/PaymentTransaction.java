@@ -70,7 +70,8 @@ public class PaymentTransaction {
         createdAt = Instant.now();
         updatedAt = createdAt;
         if (transactionReference == null) {
-            transactionReference = "TXN_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16).toUpperCase();
+            transactionReference = "TXN_"
+                    + UUID.randomUUID().toString().replace("-", "").substring(0, 16).toUpperCase();
         }
         if (currency == null) {
             currency = "INR";

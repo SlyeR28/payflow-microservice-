@@ -40,4 +40,15 @@ public class GateWayRouteConfig {
                 .build();
     }
 
+    @Bean
+    public RouterFunction<ServerResponse> paymentServiceRoute(){
+        return GatewayRouterFunctions.route("payment-service")
+                .route(
+                        request -> request.path().startsWith("/api/v1/payments"),
+                        HandlerFunctions.http()
+                )
+                .filter(lb("payment-service"))
+                .build();
+    }
+
 }
