@@ -51,4 +51,16 @@ public class GateWayRouteConfig {
                 .build();
     }
 
+    @Bean
+    public RouterFunction<ServerResponse> ledgerServiceRoute() {
+        return GatewayRouterFunctions.route("ledger-service")
+                .route(
+                        request -> request.path().startsWith("/api/v1/ledger"),
+                        HandlerFunctions.http()
+                )
+                .filter(lb("ledger-service"))
+                .build();
+    }
+
+
 }
