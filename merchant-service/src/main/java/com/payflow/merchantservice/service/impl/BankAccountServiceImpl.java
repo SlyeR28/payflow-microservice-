@@ -1,7 +1,9 @@
 package com.payflow.merchantservice.service.impl;
 
 import com.payflow.common.exceptions.BusinessException;
+import com.payflow.common.exceptions.DuplicateResourceException;
 import com.payflow.merchantservice.exceptions.BankAccountNotFoundException;
+import com.payflow.merchantservice.exceptions.InvalidMerchantStateException;
 import com.payflow.merchantservice.exceptions.MerchantNotFoundException;
 import com.payflow.merchantservice.exceptions.PrimaryBankAccountCannotBeDeletedException;
 import com.payflow.merchantservice.mapper.BankAccountMapper;
@@ -12,22 +14,17 @@ import com.payflow.merchantservice.payload.requestDto.AddBankAccountRequest;
 import com.payflow.merchantservice.payload.responseDto.BankAccountResponse;
 import com.payflow.merchantservice.repository.BankAccountRepository;
 import com.payflow.merchantservice.repository.MerchantRepository;
-import com.payflow.common.exceptions.DuplicateResourceException;
-import com.payflow.merchantservice.exceptions.InvalidMerchantStateException;
 import com.payflow.merchantservice.service.BankAccountService;
-import com.payflow.merchantservice.utils.BankAccountHashUtility;
-import com.payflow.merchantservice.utils.EncryptionUtil;
-import com.payflow.merchantservice.utils.MaskingUtil;
 import com.payflow.merchantservice.service.verification.dto.VerificationResult;
 import com.payflow.merchantservice.service.verification.impl.VerificationEngineService;
+import com.payflow.merchantservice.utils.BankAccountHashUtility;
+import com.payflow.merchantservice.utils.EncryptionUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 
 @Slf4j
 @Service

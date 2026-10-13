@@ -23,6 +23,7 @@ public interface MerchantMapper {
     @Mapping(target = "rejectReason", ignore = true)
     @Mapping(target = "approvedAt", ignore = true)
     @Mapping(target = "approvedBy", ignore = true)
+    @Mapping(target = "escrowAccountNumber", ignore = true)
     @Mapping(target = "addresses", ignore = true)
     @Mapping(target = "kycDocuments", ignore = true)
     @Mapping(target = "bankAccounts", ignore = true)

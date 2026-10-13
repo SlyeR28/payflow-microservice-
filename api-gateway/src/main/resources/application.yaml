@@ -1,20 +1,17 @@
 spring:
   application:
     name: api-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: false
   autoconfigure:
     exclude:
       - org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
 
 server:
   port: ${PORT:9000}
-
-
-  cloud:
-    gateway:
-      discovery:
-        locator:
-          enabled: false
-
 
 # discovery client configuration
 eureka:
@@ -25,7 +22,6 @@ eureka:
     fetch-registry: true
     service-url:
       defaultZone: http://localhost:8761/eureka/
-
 
 management:
   endpoints:

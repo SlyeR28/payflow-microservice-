@@ -13,6 +13,8 @@
         <option value="$PROJECT_DIR$/payment-service/pom.xml" />
         <option value="$PROJECT_DIR$/ledger-service/pom.xml" />
         <option value="$PROJECT_DIR$/notiifcation-service/pom.xml" />
+        <option value="$PROJECT_DIR$/notification-service/pom.xml" />
+        <option value="$PROJECT_DIR$/common-client/pom.xml" />
       </list>
     </option>
     <option name="ignoredFiles">

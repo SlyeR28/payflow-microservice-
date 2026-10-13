@@ -1,10 +1,8 @@
 package com.payflow.merchantservice.service;
 
 import com.payflow.merchantservice.exceptions.InvalidMerchantStateException;
-import com.payflow.merchantservice.exceptions.MerchantNotFoundException;
 import com.payflow.merchantservice.mapper.MerchantAddressMapper;
 import com.payflow.merchantservice.mapper.MerchantMapper;
-import com.payflow.merchantservice.model.entity.BankAccount;
 import com.payflow.merchantservice.model.entity.Merchant;
 import com.payflow.merchantservice.model.enums.MerchantStatus;
 import com.payflow.merchantservice.payload.responseDto.MerchantResponse;

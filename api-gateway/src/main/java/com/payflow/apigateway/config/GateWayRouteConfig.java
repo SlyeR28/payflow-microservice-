@@ -62,5 +62,16 @@ public class GateWayRouteConfig {
                 .build();
     }
 
+    @Bean
+    public RouterFunction<ServerResponse> notificationServiceRoute() {
+        return GatewayRouterFunctions.route("notification-service")
+                .route(
+                        request -> request.path().startsWith("/api/v1/notifications") ||
+                                   request.path().startsWith("/ws-notification"),
+                        HandlerFunctions.http()
+                )
+                .filter(lb("notification-service"))
+                .build();
+    }
 
 }

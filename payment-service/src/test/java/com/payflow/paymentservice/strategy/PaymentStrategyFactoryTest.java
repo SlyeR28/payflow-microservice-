@@ -1,6 +1,5 @@
 package com.payflow.paymentservice.strategy;
 
-import com.payflow.paymentservice.exception.UnsupportedPaymentProviderException;
 import com.payflow.paymentservice.model.enums.PaymentProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

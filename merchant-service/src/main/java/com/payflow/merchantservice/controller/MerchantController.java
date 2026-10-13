@@ -1,9 +1,6 @@
 package com.payflow.merchantservice.controller;
 
 import com.payflow.common.dto.ApiResponse;
-import com.payflow.common.dto.PagedResponse;
-import com.payflow.common.util.PaginationUtil;
-import com.payflow.merchantservice.model.enums.MerchantStatus;
 import com.payflow.merchantservice.payload.requestDto.CreateMerchantRequest;
 import com.payflow.merchantservice.payload.requestDto.UpdateMerchantRequest;
 import com.payflow.merchantservice.payload.responseDto.MerchantResponse;
@@ -11,13 +8,9 @@ import com.payflow.merchantservice.security.service.SecurityUtil;
 import com.payflow.merchantservice.service.MerchantService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/merchants")

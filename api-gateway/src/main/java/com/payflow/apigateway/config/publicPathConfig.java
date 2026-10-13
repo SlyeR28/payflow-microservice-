@@ -22,6 +22,7 @@ public class publicPathConfig {
                 "/api/v1/auth/refresh",
                 "/api/v1/auth/forgot-password",
                 "/api/v1/auth/reset-password",
+                "/ws-notification/**",
                 "/actuator/health",
                 "/actuator/info",
                 "/actuator/gateway/**"

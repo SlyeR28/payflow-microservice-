@@ -1,9 +1,15 @@
 package com.payflow.merchantservice.service.impl;
 
+import com.payflow.common.dto.ApiResponse;
 import com.payflow.common.dto.PagedResponse;
 import com.payflow.common.exceptions.BusinessException;
 import com.payflow.common.exceptions.DuplicateResourceException;
 import com.payflow.common.exceptions.ForbiddenException;
+import com.payflow.commonclient.ledger.LedgerServiceClient;
+import com.payflow.commonclient.ledger.dto.AccountClientResponse;
+import com.payflow.commonclient.ledger.dto.CreateAccountClientRequest;
+import com.payflow.commonclient.notification.NotificationServiceClient;
+import com.payflow.commonclient.notification.dto.NotificationClientRequest;
 import com.payflow.merchantservice.exceptions.InvalidMerchantStateException;
 import com.payflow.merchantservice.exceptions.MerchantAlreadyExistsException;
 import com.payflow.merchantservice.exceptions.MerchantNotFoundException;
@@ -11,9 +17,7 @@ import com.payflow.merchantservice.mapper.MerchantAddressMapper;
 import com.payflow.merchantservice.mapper.MerchantMapper;
 import com.payflow.merchantservice.model.entity.Merchant;
 import com.payflow.merchantservice.model.entity.MerchantAddress;
-import com.payflow.merchantservice.model.entity.MerchantKyc;
 import com.payflow.merchantservice.model.enums.AddressType;
-import com.payflow.merchantservice.model.enums.KycStatus;
 import com.payflow.merchantservice.model.enums.MerchantStatus;
 import com.payflow.merchantservice.payload.requestDto.CreateMerchantRequest;
 import com.payflow.merchantservice.payload.requestDto.UpdateMerchantRequest;
@@ -21,7 +25,6 @@ import com.payflow.merchantservice.payload.responseDto.AddressResponse;
 import com.payflow.merchantservice.payload.responseDto.MerchantResponse;
 import com.payflow.merchantservice.repository.BankAccountRepository;
 import com.payflow.merchantservice.repository.MerchantAddressRepository;
-import com.payflow.merchantservice.repository.MerchantKycRepository;
 import com.payflow.merchantservice.repository.MerchantRepository;
 import com.payflow.merchantservice.security.service.SecurityUtil;
 import com.payflow.merchantservice.service.MerchantService;
@@ -41,6 +44,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -52,11 +56,12 @@ public class MerchantServiceImpl implements MerchantService {
     private final MerchantMapper merchantMapper;
     private final EncryptionUtil encryptionUtil;
     private final SecurityUtil securityUtil;
-    private final MerchantKycRepository merchantKycRepository;
     private final MerchantAddressRepository merchantAddressRepository;
     private final MerchantAddressMapper merchantAddressMapper;
     private final BankAccountRepository bankAccountRepository;
     private final VerificationEngineService verificationEngineService;
+    private final LedgerServiceClient ledgerServiceClient;
+    private final NotificationServiceClient notificationServiceClient;
 
     @Transactional(propagation = Propagation.REQUIRED)
     @Override
@@ -217,10 +222,43 @@ public class MerchantServiceImpl implements MerchantService {
                 bankAccountRepository.findByMerchantId(merchantId).stream()
                         .anyMatch(ba -> Boolean.TRUE.equals(ba.getIsVerified()));
 
+
+
+
         if (!hasVerifiedBank) {
             throw new InvalidMerchantStateException("Merchant cannot be approved: Bank account is not verified");
         }
 
+        // Linking to ledger service
+        if (merchant.getEscrowAccountNumber() == null || merchant.getEscrowAccountNumber().isBlank()) {
+            CreateAccountClientRequest accountRequest = CreateAccountClientRequest.builder()
+                    .name("Merchant Escrow- " + merchant.getBusinessName())
+                    .merchantId(merchantId)
+                    .accountType("LIABILITY")
+                    .currency("INR")
+                    .build();
+
+
+            try {
+                ApiResponse<AccountClientResponse> accountResponse = ledgerServiceClient.createAccount(accountRequest);
+                if (accountResponse != null && accountResponse.isSuccess() && accountResponse.getData() != null){
+                    merchant.setEscrowAccountNumber(accountResponse.getData().getAccountNumber());
+                    log.info("Provisioned ledger escrow account [{}] for merchantId={}",
+                            accountResponse.getData().getAccountNumber(), merchantId);
+                }else{
+                    String errorMessage = (accountResponse != null && accountResponse.getMessage() != null)
+                            ? accountResponse.getMessage()
+                            : "Failed to create ledger escrow account";
+                    throw new BusinessException("Cannot approve merchant: " + errorMessage, "LEDGER_PROVISIONING_FAILED");
+                }
+            } catch (BusinessException e) {
+                throw  e;
+            }catch (Exception e) {
+                log.error("Failed to provision ledger escrow account for merchantId={}: {}", merchantId, e.getMessage());
+                throw new BusinessException("Cannot approve merchant: Ledger service unreachable (" +
+                        "" + e.getMessage() + ")", "LEDGER_SERVICE_UNAVAILABLE");
+            }
+        }
         merchant.setStatus(MerchantStatus.ACTIVE);
         merchant.setApprovedBy(adminId);
         merchant.setApprovedAt(Instant.now());
@@ -228,6 +266,23 @@ public class MerchantServiceImpl implements MerchantService {
         merchantRepository.save(merchant);
 
         log.info("Merchant approved: merchantId={} adminUserId={}", merchantId, adminId);
+
+        try{
+            NotificationClientRequest build = NotificationClientRequest.builder()
+                    .recipient(merchant.getBusinessEmail())
+                    .channel("EMAIL")
+                    .templateType("MERCHANT_APPROVED")
+                    .subject("Your payFlow Merchant Account is Approved!")
+                    .payload(Map.of(
+                            "merchantId", merchantId,
+                            "businessName", merchant.getBusinessName()
+                    ))
+                    .build();
+            notificationServiceClient.sendNotification(build);
+        } catch (Exception e) {
+            log.error("Failed to send notification for merchantId={}: {}", merchantId, e.getMessage());
+            // Graceful degradation: do not fail approval if notification delivery fails
+        }
 
         return toResponseWithAddresses(merchant);
     }

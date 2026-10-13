@@ -1,5 +1,8 @@
 package com.payflow.paymentservice.service;
 
+import com.payflow.commonclient.ledger.LedgerServiceClient;
+import com.payflow.commonclient.merchant.MerchantServiceClient;
+import com.payflow.commonclient.notification.NotificationServiceClient;
 import com.payflow.paymentservice.dto.*;
 import com.payflow.paymentservice.exception.PaymentGatewayException;
 import com.payflow.paymentservice.exception.PaymentTransactionNotFoundException;
@@ -26,6 +29,9 @@ public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentStrategyFactory strategyFactory;
     private final PaymentTransactionRepository transactionRepository;
+    private final MerchantServiceClient merchantServiceClient;
+    private final LedgerServiceClient ledgerServiceClient;
+    private final NotificationServiceClient notificationServiceClient;
 
     @Override
     public GatewayVerificationResponse verifyCredentials(VerifyCredentialsRequest request) {

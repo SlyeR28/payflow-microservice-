@@ -90,6 +90,9 @@ public class Merchant {
     @Column(name = "approved_by")
     private Long approvedBy;
 
+    @Column(name = "escrow_account_number", length = 64)
+    private String escrowAccountNumber;
+
     @OneToMany(mappedBy = "merchant", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<MerchantAddress> addresses = new ArrayList<>();

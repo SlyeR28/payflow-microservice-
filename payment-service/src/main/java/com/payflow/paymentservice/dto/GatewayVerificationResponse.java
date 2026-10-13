@@ -1,11 +1,7 @@
 package com.payflow.paymentservice.dto;
 
 import com.payflow.paymentservice.model.enums.PaymentProvider;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.Instant;
 import java.util.Map;

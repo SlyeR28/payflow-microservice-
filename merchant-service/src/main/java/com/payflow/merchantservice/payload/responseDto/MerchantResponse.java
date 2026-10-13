@@ -32,6 +32,7 @@ public class MerchantResponse {
     private Instant bankVerifiedAt;
     private String rejectReason;
     private Instant approvedAt;
+    private String escrowAccountNumber;
     private Instant createdAt;
     private Instant updatedAt;
     private List<AddressResponse> addresses;
