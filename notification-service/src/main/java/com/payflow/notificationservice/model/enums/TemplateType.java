@@ -6,5 +6,6 @@ public enum TemplateType {
     PAYMENT_FAILED,         // Card decline / insufficient funds alert
     REFUND_PROCESSED,       // Customer refund confirmation
     MERCHANT_PAYOUT,        // Bank payout transfer notification
-    KYC_STATUS_UPDATE
+    KYC_STATUS_UPDATE,
+    MERCHANT_APPROVED       // Merchant onboarding approval alert
 }

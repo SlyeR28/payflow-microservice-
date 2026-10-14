@@ -27,6 +27,10 @@ public class PaymentTransaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+
+    @Column(name = "merchant_id", nullable = false)
+    private Long merchantId;
+
     @Column(name = "transaction_reference", nullable = false, unique = true, length = 64)
     private String transactionReference;
 

@@ -15,6 +15,10 @@ import java.math.BigDecimal;
 @Builder
 public class PaymentInitiateRequest {
 
+
+    @NotNull(message = "Merchant ID is required")
+    private Long merchantId;
+
     @NotNull(message = "Amount is required")
     @DecimalMin(value = "0.01", message = "Amount must be greater than zero")
     private BigDecimal amount;

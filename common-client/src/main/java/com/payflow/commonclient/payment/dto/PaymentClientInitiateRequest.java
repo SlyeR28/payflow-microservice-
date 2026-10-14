@@ -16,6 +16,11 @@ import java.util.Map;
 @Builder
 public class PaymentClientInitiateRequest {
 
+
+    @NotNull(message = "Merchant ID is required")
+    private Long merchantId;
+
+
     @NotNull(message = "Amount is required")
     @DecimalMin(value = "0.01" , message = "Amount must be greater than 0.01")
     private BigDecimal amount;

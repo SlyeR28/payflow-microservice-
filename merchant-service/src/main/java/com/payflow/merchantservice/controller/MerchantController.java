@@ -64,4 +64,13 @@ public class MerchantController {
                 .data(response)
                 .build());
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<MerchantResponse>> getMerchantById(@PathVariable Long id) {
+        MerchantResponse response = merchantService.getMerchantById(id);
+        return ResponseEntity.ok(ApiResponse.<MerchantResponse>builder()
+                .success(true)
+                .data(response)
+                .build());
+    }
 }

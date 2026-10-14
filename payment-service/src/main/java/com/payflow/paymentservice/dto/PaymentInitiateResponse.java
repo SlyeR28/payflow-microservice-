@@ -16,6 +16,7 @@ import java.util.Map;
 public class PaymentInitiateResponse {
 
     private Long id;
+    private Long merchantId;
     private String transactionReference;
     private PaymentProvider provider;
     private BigDecimal amount;
