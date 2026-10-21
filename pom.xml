@@ -34,6 +34,7 @@
     <modules>
         <module>common</module>
         <module>common-client</module>
+        <module>config-server</module>
         <module>eureka-server</module>
         <module>api-gateway</module>
         <module>auth-service</module>

@@ -34,7 +34,17 @@ build/
 # Exclude extra documentation, diagrams and infrastructure files
 extra/
 
+# Documentation created locally (not pushed to GitHub)
+docs/
 
+# Externalized Configuration Repository (Spring Cloud Config - maintained separately)
+config-repo/
+config_repo/
+
+# Local Environment Variables & Secrets
+.env
+.env.*
+!.env.example
 
 ### VS Code ###
 .vscode/

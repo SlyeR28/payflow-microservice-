@@ -5,9 +5,6 @@ import lombok.*;
 
 @Getter
 @Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class LoginRequest {
     /**
      * Can be username OR email.
@@ -18,4 +15,12 @@ public class LoginRequest {
 
     @NotBlank(message = "Password is required")
     private String password;
+
+    public LoginRequest() {
+    }
+
+    public LoginRequest(String identifier, String password) {
+        this.identifier = identifier;
+        this.password = password;
+    }
 }

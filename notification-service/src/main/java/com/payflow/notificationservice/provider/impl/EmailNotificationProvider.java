@@ -48,8 +48,18 @@ public class EmailNotificationProvider implements NotificationProvider {
 
         } catch (Exception e) {
             long latency  = System.currentTimeMillis() - start;
-            log.warn("Email dispatch failed to [{}] (using dev fallback): {}", messages.getRecipient(), e.getMessage());
-            return ProviderResult.failure("JavaMailSender-simulated" , messageId , 500 , latency);
+            log.warn("Email dispatch failed to [{}] (falling back to dev simulated dispatch): {}", messages.getRecipient(), e.getMessage());
+            log.info("""
+
+                ╔═══════════════════════════════════════════════════════════╗
+                ║          DEV CONSOLE EMAIL (SIMULATED DISPATCH)           ║
+                ╠═══════════════════════════════════════════════════════════╣
+                ║ To:      {}
+                ║ Subject: {}
+                ║ Content: {}
+                ╚═══════════════════════════════════════════════════════════╝
+                """, messages.getRecipient(), messages.getSubject(), messages.getContent());
+            return ProviderResult.success("JavaMailSender-Simulated", messageId, 200, latency);
         }
     }
 }

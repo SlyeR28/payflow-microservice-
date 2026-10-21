@@ -15,6 +15,7 @@ import com.payflow.notificationservice.model.document.NotificationPreference;
 import com.payflow.notificationservice.model.document.NotificationTemplate;
 import com.payflow.notificationservice.model.enums.NotificationChannel;
 import com.payflow.notificationservice.model.enums.NotificationStatus;
+import com.payflow.notificationservice.model.enums.TemplateType;
 import com.payflow.notificationservice.provider.NotificationProvider;
 import com.payflow.notificationservice.provider.ProviderRegistry;
 import com.payflow.notificationservice.provider.ProviderResult;
@@ -74,12 +75,56 @@ public class NotificationServiceImpl  implements NotificationService {
 
             if (byTemplateCode.isPresent()) {
                 NotificationTemplate tpl = byTemplateCode.get();
-                subject = templateEngineService.render(tpl.getSubject(), request.getPayload());
-                content = templateEngineService.render(tpl.getBodyTemplate(), request.getPayload());
+                if (tpl.getSubject() != null && !tpl.getSubject().isBlank()) {
+                    subject = templateEngineService.render(tpl.getSubject(), request.getPayload());
+                }
+                if (tpl.getBodyTemplate() != null && !tpl.getBodyTemplate().isBlank()) {
+                    content = templateEngineService.render(tpl.getBodyTemplate(), request.getPayload());
+                }
+            }
+        }
+
+        // Fallback content rendering if template is missing or body template is empty
+        if (content == null || content.isBlank()) {
+            if (request.getTemplateType() == TemplateType.OTP_ALERT) {
+                Object otpVal = request.getPayload() != null ? request.getPayload().get("otp") : null;
+                Object purposeVal = request.getPayload() != null && request.getPayload().get("purpose") != null
+                        ? request.getPayload().get("purpose")
+                        : "verification";
+                if (otpVal != null) {
+                    content = "Your PayFlow " + purposeVal + " code is: " + otpVal + ". Valid for 5 minutes. Do not share this code with anyone.";
+                } else {
+                    content = "Your PayFlow security verification OTP code has been requested.";
+                }
+            } else if (request.getTemplateType() == TemplateType.WELCOME_EMAIL) {
+                Object username = request.getPayload() != null ? request.getPayload().get("username") : "Customer";
+                content = "Welcome to PayFlow, " + username + "! Your account has been verified and activated.";
+            } else if (request.getTemplateType() == TemplateType.ACCOUNT_ALERT) {
+                Object msg = request.getPayload() != null ? request.getPayload().get("message") : null;
+                content = msg != null ? String.valueOf(msg) : "Account security alert from PayFlow.";
+            } else if (request.getTemplateType() == TemplateType.USERNAME_REMINDER) {
+                Object username = request.getPayload() != null ? request.getPayload().get("username") : "";
+                content = "Reminder: You are currently using username: " + username + ". You may customize it anytime in settings.";
             } else {
                 content = "Notification Alert for " + request.getTemplateType();
             }
+        }
 
+        // Fallback subject if not provided or rendered
+        if (subject == null || subject.isBlank()) {
+            if (request.getTemplateType() == TemplateType.OTP_ALERT) {
+                Object otpVal = request.getPayload() != null ? request.getPayload().get("otp") : null;
+                subject = otpVal != null ? "Your PayFlow Verification Code: " + otpVal : "PayFlow Security Verification Code";
+            } else if (request.getTemplateType() == TemplateType.WELCOME_EMAIL) {
+                Object username = request.getPayload() != null ? request.getPayload().get("username") : "User";
+                subject = "Welcome to PayFlow, " + username + "!";
+            } else if (request.getTemplateType() == TemplateType.ACCOUNT_ALERT) {
+                subject = "PayFlow Account Notification";
+            } else if (request.getTemplateType() == TemplateType.USERNAME_REMINDER) {
+                subject = "PayFlow: Username Reminder";
+            } else {
+                subject = "PayFlow Notification - " + request.getTemplateType().name();
+            }
         }
 
             //Save Master record with Pending / processing status

@@ -14,6 +14,9 @@ import com.payflow.merchantservice.security.service.SecurityUtil;
 import com.payflow.merchantservice.service.impl.MerchantServiceImpl;
 import com.payflow.merchantservice.service.verification.impl.VerificationEngineService;
 import com.payflow.merchantservice.utils.EncryptionUtil;
+import com.payflow.common.dto.ApiResponse;
+import com.payflow.commonclient.ledger.LedgerServiceClient;
+import com.payflow.commonclient.ledger.dto.AccountClientResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -57,6 +60,9 @@ class MerchantServiceImplTest {
 
     @Mock
     private VerificationEngineService verificationEngineService;
+
+    @Mock
+    private LedgerServiceClient ledgerServiceClient;
 
     @InjectMocks
     private MerchantServiceImpl merchantService;
@@ -116,6 +122,10 @@ class MerchantServiceImplTest {
                 .isPanVerified(true)
                 .isBankVerified(true)
                 .build());
+        when(ledgerServiceClient.createAccount(any())).thenReturn(ApiResponse.success("Account created",
+                AccountClientResponse.builder()
+                        .accountNumber("ACC_ESCROW_1")
+                        .build()));
 
         MerchantResponse response = merchantService.approve(1L, 999L);
 

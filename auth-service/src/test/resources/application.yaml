@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: auth-service-test
+  datasource:
+    url: jdbc:h2:mem:auth_test_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: false
+  cloud:
+    config:
+      enabled: false
+
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+
+app:
+  jwt:
+    secret: dev-only-secret-change-me-this-must-be-at-least-64-characters-for-hs256-signing
+    expiration-millis: 900000
+  refresh-token:
+    expiration-millis: 604800000
+  storage:
+    s3:
+      endpoint: http://localhost:9000
+      bucket-name: user-avatars
+      access-key: dummy-access-key
+      secret-key: dummy-secret-key
+      region: us-east-1

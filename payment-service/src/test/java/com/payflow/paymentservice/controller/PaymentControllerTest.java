@@ -90,6 +90,7 @@ class PaymentControllerTest {
     @DisplayName("POST /initiate - Success (201 Created)")
     void testInitiatePaymentSuccess() throws Exception {
         PaymentInitiateRequest request = PaymentInitiateRequest.builder()
+                .merchantId(101L)
                 .amount(new BigDecimal("750.00"))
                 .currency("INR")
                 .provider(PaymentProvider.MOCK)

@@ -1,0 +1,12 @@
+**/.git
+**/.gitignore
+**/.idea
+**/.vscode
+**/target/generated-sources
+**/target/maven-status
+**/target/test-classes
+**/*.log
+**/*.cmd
+**/*.bat
+**/extra
+README.md
