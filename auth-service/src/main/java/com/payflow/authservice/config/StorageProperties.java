@@ -11,10 +11,10 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "app.storage.s3")
 public class StorageProperties {
 
-    private String endpoint = "http://192.168.1.18/:9000";
-    private String bucketName = "user-avatars";
-    private String accessKey = "admin_payflow_master";
-    private String secretKey = "StrongMasterSecretKey#2026Secure";
+    private String endpoint;
+    private String bucketName;
+    private String accessKey;
+    private String secretKey;
     private String region = "us-east-1";
 
 }

@@ -1,4 +1,4 @@
-version: '3.8'
+
 
 # ==============================================================================
 # PAYFLOW MASTER DOCKER COMPOSE ORCHESTRATION
@@ -56,7 +56,7 @@ services:
       retries: 5
 
   minio:
-    image: minio/minio:RELEASE.2024-05-10T01-41-38Z
+    image: cgr.dev/chainguard/minio:latest
     container_name: payflow-minio
     restart: always
     networks:
@@ -70,27 +70,28 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-StrongMasterSecretKey#2026Secure}
     volumes:
       - minio-data:/data
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   minio-init:
-    image: minio/mc
+    image: cgr.dev/chainguard/minio-client:latest-dev
     container_name: payflow-minio-init
     networks:
       - payflow-net
+    environment:
+      MC_CONFIG_DIR: /tmp
     depends_on:
-      minio:
-        condition: service_healthy
+      - minio
     entrypoint: >
       /bin/sh -c "
-      mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER:-admin_payflow_master} ${MINIO_ROOT_PASSWORD:-StrongMasterSecretKey#2026Secure};
+      echo 'Waiting for MinIO server to be ready...';
+      until mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER:-admin_payflow_master} ${MINIO_ROOT_PASSWORD:-StrongMasterSecretKey#2026Secure}; do
+        echo 'MinIO is not ready yet, retrying in 2 seconds...';
+        sleep 2;
+      done;
       mc mb myminio/merchant-documents --ignore-existing;
       mc mb myminio/user-avatars --ignore-existing;
       mc anonymous set download myminio/merchant-documents;
       mc anonymous set download myminio/user-avatars;
+      echo 'PayFlow buckets successfully created!';
       exit 0;
       "
 

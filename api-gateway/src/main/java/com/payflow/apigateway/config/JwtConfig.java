@@ -17,10 +17,9 @@ public class JwtConfig {
 
     @Bean
     public JwtProvider jwtProvider(
-            @Value("${JWT_SECRET:dev-only-secret-change-me-this-must-be-at-least-64-characters-for-hs256}") String secret,
-            @Value("${JWT_EXPIRATION_MILLIS:900000}") long expirationMillis) {
+            @Value("${app.jwt.secret:${JWT_SECRET:dev-only-secret-change-me-this-must-be-at-least-64-characters-for-hs256-signing}}") String secret,
+            @Value("${app.jwt.expiration-millis:${JWT_EXPIRATION_MS:${JWT_EXPIRATION_MILLIS:900000}}}") long expirationMillis) {
 
         return new JwtProvider(secret, expirationMillis);
     }
-
 }

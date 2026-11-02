@@ -1,7 +1,8 @@
 package com.payflow.authservice.payload.requestDto;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 @Setter

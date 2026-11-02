@@ -1,5 +1,8 @@
 package com.payflow.merchantservice.service;
 
+import com.payflow.common.dto.ApiResponse;
+import com.payflow.commonclient.ledger.LedgerServiceClient;
+import com.payflow.commonclient.ledger.dto.AccountClientResponse;
 import com.payflow.merchantservice.exceptions.InvalidMerchantStateException;
 import com.payflow.merchantservice.mapper.MerchantAddressMapper;
 import com.payflow.merchantservice.mapper.MerchantMapper;
@@ -14,9 +17,6 @@ import com.payflow.merchantservice.security.service.SecurityUtil;
 import com.payflow.merchantservice.service.impl.MerchantServiceImpl;
 import com.payflow.merchantservice.service.verification.impl.VerificationEngineService;
 import com.payflow.merchantservice.utils.EncryptionUtil;
-import com.payflow.common.dto.ApiResponse;
-import com.payflow.commonclient.ledger.LedgerServiceClient;
-import com.payflow.commonclient.ledger.dto.AccountClientResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

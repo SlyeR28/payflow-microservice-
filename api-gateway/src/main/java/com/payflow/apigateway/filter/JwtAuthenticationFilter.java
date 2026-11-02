@@ -42,7 +42,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
 
-        String token = authHeader.substring(Headers.BEARER_PREFIX.length());
+        String token = authHeader.substring(Headers.BEARER_PREFIX.length()).trim();
+
+        if (token.isEmpty() || "undefined".equalsIgnoreCase(token) || "null".equalsIgnoreCase(token)){
+            log.warn("Invalid JWT for Path ={}: {}", request.getRequestURI(), "Invalid or expired token");
+            SecurityContextHolder.clearContext();
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"errorCode\":\"UNAUTHORIZED\",\"message\":\"Invalid or expired token\"}");
+            return;
+        }
+
 
         try{
             JwtClaims claims = jwtProvider.parseToken(token);

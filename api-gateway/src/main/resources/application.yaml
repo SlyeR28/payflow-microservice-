@@ -8,3 +8,8 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:local}
   config:
     import: "optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}"
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:dev-only-secret-change-me-this-must-be-at-least-64-characters-for-hs256-signing}
+    expiration-millis: ${JWT_EXPIRATION_MS:${JWT_EXPIRATION_MILLIS:900000}}

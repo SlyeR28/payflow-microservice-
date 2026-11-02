@@ -43,7 +43,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        String token = authHeader.substring(Headers.BEARER_PREFIX.length());
+        String token = authHeader.substring(Headers.BEARER_PREFIX.length()).trim();
 
         try {
             JwtClaims claims = jwtProvider.parseToken(token);
