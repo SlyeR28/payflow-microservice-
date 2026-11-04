@@ -5,10 +5,9 @@ import com.payflow.authservice.model.entity.User;
 import com.payflow.authservice.payload.requestDto.AvatarConfirmRequest;
 import com.payflow.authservice.payload.requestDto.AvatarUploadUrlRequest;
 import com.payflow.authservice.payload.requestDto.UpdateProfileRequest;
-import com.payflow.authservice.payload.responseDto.AvatarDownloadUrlResponse;
-import com.payflow.authservice.payload.responseDto.AvatarUploadUrlResponse;
-import com.payflow.authservice.payload.responseDto.UserResponse;
+import com.payflow.authservice.payload.responseDto.*;
 import com.payflow.authservice.repository.UserRepository;
+import com.payflow.authservice.service.CloudinaryService;
 import com.payflow.authservice.service.UserService;
 import com.payflow.common.constant.Roles;
 import com.payflow.common.exceptions.BusinessException;
@@ -17,9 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Duration;
-import java.util.UUID;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
@@ -29,12 +26,12 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
-    private final AvatarStorageService avatarStorageService;
+    private final CloudinaryService cloudinaryService;
 
     @Override
     public UserResponse getProfile(Long userId) {
-       User user = userRepository.findById(userId)
-               .orElseThrow(() -> new ResourceNotFoundException("User not found" , userId));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found", userId));
         return userMapper.toResponse(user);
     }
 
@@ -66,19 +63,13 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
-        String originalName = request.getFileName();
-        String fileExt = (originalName != null && originalName.contains("."))
-                ? originalName.substring(originalName.lastIndexOf(".")).toLowerCase()
-                : ".png";
+        CloudinarySignatureResponse sig = cloudinaryService.generateSignedUploadParameters(userId);
 
-        String s3Key = String.format("avatars/%d/avatar_%s%s", userId, UUID.randomUUID(), fileExt);
-        String uploadUrl = avatarStorageService.generateUploadPresignedUrl(s3Key, request.getContentType(), Duration.ofMinutes(15));
-
-        log.info("Generated presigned avatar upload URL for userId={}, s3Key={}", userId, s3Key);
+        log.info("Generated Cloudinary upload URL for userId={}", userId);
 
         return AvatarUploadUrlResponse.builder()
-                .uploadUrl(uploadUrl)
-                .s3Key(s3Key)
+                .uploadUrl(sig.getUploadUrl())
+                .s3Key("payflow/avatars/user_" + userId)
                 .expiresInMinutes(15)
                 .build();
     }
@@ -91,7 +82,7 @@ public class UserServiceImpl implements UserService {
         user.setAvatarUrl(request.getS3Key());
         User savedUser = userRepository.save(user);
 
-        log.info("Confirmed avatar upload for userId={}, s3Key={}", userId, request.getS3Key());
+        log.info("Confirmed avatar upload for userId={}, url={}", userId, request.getS3Key());
         return userMapper.toResponse(savedUser);
     }
 
@@ -109,13 +100,32 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException("User does not have an avatar uploaded");
         }
 
-        String downloadUrl = avatarStorageService.generateDownloadPresignedUrl(user.getAvatarUrl(), Duration.ofMinutes(60));
+        String avatarUrl = user.getAvatarUrl();
 
         return AvatarDownloadUrlResponse.builder()
-                .downloadUrl(downloadUrl)
-                .s3Key(user.getAvatarUrl())
-                .expiresInMinutes(60)
+                .downloadUrl(avatarUrl)
+                .s3Key(avatarUrl)
+                .expiresInMinutes(0)
                 .build();
     }
-}
 
+    @Override
+    public UserResponse uploadAvatarCloudinary(Long userId, MultipartFile file) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        CloudinaryUploadResponse uploadResponse = cloudinaryService.uploadAvatar(userId, file);
+        user.setAvatarUrl(uploadResponse.getSecureUrl());
+        User savedUser = userRepository.save(user);
+
+        log.info("Updated user avatar via Cloudinary: userId={}, secureUrl={}", userId, uploadResponse.getSecureUrl());
+        return userMapper.toResponse(savedUser);
+    }
+
+    @Override
+    public CloudinarySignatureResponse getCloudinaryUploadSignature(Long userId) {
+        userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+        return cloudinaryService.generateSignedUploadParameters(userId);
+    }
+}

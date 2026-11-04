@@ -21,64 +21,69 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class NotificationController {
 
-    private final NotificationService notificationService;
+        private final NotificationService notificationService;
 
-    @PostMapping("/send")
-    public ResponseEntity<ApiResponse<NotificationResponse>> sendNotification(
-            @Valid @RequestBody SendNotificationRequest request) {
-        log.info("Received request to send [{}] notification to [{}]", request.getChannel(), request.getRecipient());
-        NotificationResponse response = notificationService.sendNotification(request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.<NotificationResponse>builder()
-                        .success(true)
-                        .message("Notification dispatched successfully")
-                        .data(response)
-                        .build());
-    }
+        @PostMapping("/send")
+        public ResponseEntity<ApiResponse<NotificationResponse>> sendNotification(
+                        @Valid @RequestBody SendNotificationRequest request) {
+                log.info("Received request to send [{}] notification to [{}]", request.getChannel(),
+                                request.getRecipient());
+                NotificationResponse response = notificationService.sendNotification(request);
+                boolean isSent = response
+                                .getStatus() == com.payflow.notificationservice.model.enums.NotificationStatus.SENT;
+                return ResponseEntity.status(HttpStatus.CREATED)
+                                .body(ApiResponse.<NotificationResponse>builder()
+                                                .success(isSent)
+                                                .message(isSent ? "Notification dispatched successfully"
+                                                                : "Notification dispatch failed: "
+                                                                                + response.getFailureReason())
+                                                .data(response)
+                                                .build());
+        }
 
-    @GetMapping("/{reference}")
-    public ResponseEntity<ApiResponse<NotificationResponse>> getNotification(
-            @PathVariable String reference) {
-        NotificationResponse response = notificationService.getNotificationByReference(reference);
-        return ResponseEntity.ok(ApiResponse.<NotificationResponse>builder()
-                .success(true)
-                .message("Notification retrieved successfully")
-                .data(response)
-                .build());
-    }
+        @GetMapping("/{reference}")
+        public ResponseEntity<ApiResponse<NotificationResponse>> getNotification(
+                        @PathVariable String reference) {
+                NotificationResponse response = notificationService.getNotificationByReference(reference);
+                return ResponseEntity.ok(ApiResponse.<NotificationResponse>builder()
+                                .success(true)
+                                .message("Notification retrieved successfully")
+                                .data(response)
+                                .build());
+        }
 
-    @PostMapping("/templates")
-    public ResponseEntity<ApiResponse<TemplateResponse>> createTemplate(
-            @Valid @RequestBody CreateTemplateRequest request) {
-        TemplateResponse response = notificationService.createTemplate(request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.<TemplateResponse>builder()
-                        .success(true)
-                        .message("Template created successfully")
-                        .data(response)
-                        .build());
-    }
+        @PostMapping("/templates")
+        public ResponseEntity<ApiResponse<TemplateResponse>> createTemplate(
+                        @Valid @RequestBody CreateTemplateRequest request) {
+                TemplateResponse response = notificationService.createTemplate(request);
+                return ResponseEntity.status(HttpStatus.CREATED)
+                                .body(ApiResponse.<TemplateResponse>builder()
+                                                .success(true)
+                                                .message("Template created successfully")
+                                                .data(response)
+                                                .build());
+        }
 
-    @PutMapping("/preferences/{merchantId}")
-    public ResponseEntity<ApiResponse<PreferenceResponse>> updatePreference(
-            @PathVariable Long merchantId,
-            @Valid @RequestBody UpdatePreferenceRequest request) {
-        PreferenceResponse response = notificationService.updatePreference(merchantId, request);
-        return ResponseEntity.ok(ApiResponse.<PreferenceResponse>builder()
-                .success(true)
-                .message("Notification preferences updated successfully")
-                .data(response)
-                .build());
-    }
+        @PutMapping("/preferences/{merchantId}")
+        public ResponseEntity<ApiResponse<PreferenceResponse>> updatePreference(
+                        @PathVariable Long merchantId,
+                        @Valid @RequestBody UpdatePreferenceRequest request) {
+                PreferenceResponse response = notificationService.updatePreference(merchantId, request);
+                return ResponseEntity.ok(ApiResponse.<PreferenceResponse>builder()
+                                .success(true)
+                                .message("Notification preferences updated successfully")
+                                .data(response)
+                                .build());
+        }
 
-    @GetMapping("/preferences/{merchantId}")
-    public ResponseEntity<ApiResponse<PreferenceResponse>> getPreference(
-            @PathVariable Long merchantId) {
-        PreferenceResponse response = notificationService.getPreference(merchantId);
-        return ResponseEntity.ok(ApiResponse.<PreferenceResponse>builder()
-                .success(true)
-                .message("Notification preferences retrieved successfully")
-                .data(response)
-                .build());
-    }
+        @GetMapping("/preferences/{merchantId}")
+        public ResponseEntity<ApiResponse<PreferenceResponse>> getPreference(
+                        @PathVariable Long merchantId) {
+                PreferenceResponse response = notificationService.getPreference(merchantId);
+                return ResponseEntity.ok(ApiResponse.<PreferenceResponse>builder()
+                                .success(true)
+                                .message("Notification preferences retrieved successfully")
+                                .data(response)
+                                .build());
+        }
 }

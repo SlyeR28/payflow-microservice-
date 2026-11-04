@@ -8,13 +8,12 @@ import org.springframework.context.annotation.Configuration;
 @Getter
 @Setter
 @Configuration
-@ConfigurationProperties(prefix = "app.storage.s3")
-public class StorageProperties {
+@ConfigurationProperties(prefix = "cloudinary")
+public class CloudinaryProperties {
 
-    private String endpoint;
-    private String bucketName;
-    private String accessKey;
-    private String secretKey;
-    private String region = "us-east-1";
-
+    private String cloudName;
+    private String apiKey;
+    private String apiSecret;
+    private boolean secure = true;
 }
+

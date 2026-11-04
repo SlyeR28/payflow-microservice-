@@ -98,7 +98,7 @@ public class AuthServiceImpl  implements AuthService {
 
         userRepository.save(user);
 
-       userCredentialRepository.save(  UserCredentials.builder()
+       userCredentialRepository.save(UserCredentials.builder()
                 .user(user)
                 .password(passwordEncoder.encode(registerRequest.getPassword()))
                 .passwordChangedAt(Instant.now())

@@ -148,11 +148,11 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- AWS SDK v2 S3 — MinIO / S3 Object Storage for user avatars -->
+        <!-- Cloudinary SDK for Profile Image & Media Handling -->
         <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>s3</artifactId>
-            <version>2.29.51</version>
+            <groupId>com.cloudinary</groupId>
+            <artifactId>cloudinary-http44</artifactId>
+            <version>1.38.0</version>
         </dependency>
 
     </dependencies>

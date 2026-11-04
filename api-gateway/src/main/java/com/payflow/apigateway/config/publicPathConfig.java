@@ -25,7 +25,9 @@ public class publicPathConfig {
                 "/ws-notification/**",
                 "/actuator/health",
                 "/actuator/info",
-                "/actuator/gateway/**"
+                "/actuator/gateway/**",
+                "/error",
+                "/error/**"
         );
     }
 

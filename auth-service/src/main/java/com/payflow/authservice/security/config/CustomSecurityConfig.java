@@ -34,7 +34,9 @@ public class CustomSecurityConfig {
             "/api/v1/auth/forgot-password",
             "/api/v1/auth/reset-password",
             "/actuator/health",
-            "/actuator/info"
+            "/actuator/info",
+            "/error",
+            "/error/**"
     };
 
     private final UserDetailsService userDetailsService;

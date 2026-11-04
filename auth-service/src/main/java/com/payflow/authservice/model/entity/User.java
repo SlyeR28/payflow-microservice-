@@ -47,7 +47,7 @@ public class User {
 
     /**
      * Public URL to the user's avatar image.
-     * The image bytes live in object storage (S3 / Cloudflare R2 / MinIO).
+     * The image bytes live in Cloudinary media CDN.
      * This column stores only the URL — never the binary.
      * Nullable: user may not have uploaded an avatar yet.
      */

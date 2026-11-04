@@ -137,11 +137,11 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- 13. AWS SDK v2 S3 — MinIO / S3 Object Storage integration -->
+        <!-- 13. Cloudinary SDK for KYC Documents & Media Storage -->
         <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>s3</artifactId>
-            <version>2.29.51</version>
+            <groupId>com.cloudinary</groupId>
+            <artifactId>cloudinary-http44</artifactId>
+            <version>1.38.0</version>
         </dependency>
 
     </dependencies>

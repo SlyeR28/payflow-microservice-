@@ -8,3 +8,29 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:local}
   config:
     import: "optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}"
+  data:
+    mongodb:
+      auto-index-creation: true
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/payflow_notification}
+  mail:
+    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:jaatboykumar12@gmail.com}
+    password: ${SPRING_MAIL_PASSWORD:jmlxwhdwfqigaulv}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          ssl:
+            trust: smtp.gmail.com
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
+
+payflow:
+  mail:
+    from-address: ${SPRING_MAIL_USERNAME:jaatboykumar12@gmail.com}
+    from-name: "PayFlow Alerts"

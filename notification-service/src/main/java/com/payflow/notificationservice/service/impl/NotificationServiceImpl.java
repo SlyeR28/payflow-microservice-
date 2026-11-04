@@ -196,7 +196,6 @@ public class NotificationServiceImpl  implements NotificationService {
 
     }
 
-
     @Override
     public TemplateResponse createTemplate(CreateTemplateRequest request) {
         NotificationTemplate template =
@@ -258,4 +257,5 @@ public class NotificationServiceImpl  implements NotificationService {
                     case IN_APP -> true;
                 }).orElse(true);
     }
+
 }
