@@ -43,12 +43,6 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
-        <!-- 4. Actuator — /health, /info for Eureka heartbeats -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-
         <!-- 5. Eureka client — service discovery registration -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>

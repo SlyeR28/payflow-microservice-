@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class OtpEventListener {
+public class OtpEventListener { 
 
     private final EmailService emailService;
 
